@@ -1,1 +1,1917 @@
 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#1a1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Akane">
+<meta name="description" content="Akane, tu compañera virtual: voz, clima real, cuartos y minijuegos.">
+<title>Akane · Tu compañera virtual</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root {
+    --accent: #e8a04b; --cream: #f5e8d8;
+    --panel: rgba(24,17,12,.96);
+    --bg-top: #3b2a3f; --bg-mid: #1a1220; --bg-bot: #0a0710;
+    --light: rgba(255,220,150,.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100dvh; overflow: hidden; font-family: Georgia, serif; color: var(--cream); user-select: none; }
+  body { display: flex; flex-direction: column; position: relative; }
+
+  #scene { position: absolute; inset: 0; background: linear-gradient(to bottom, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bot) 100%); transition: background 1.2s ease; z-index: 0; }
+  #scene::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 55%, var(--light), transparent 60%); transition: background 1.2s ease; pointer-events: none; }
+
+  /* ====== PARED + SUELO POR CUARTO ====== */
+  #roomBack { position: absolute; inset: 0; overflow: hidden; z-index: 1; pointer-events: none; }
+  #roomWall {
+    position: absolute; inset: 0 0 38% 0;
+    background:
+      radial-gradient(ellipse at 50% 20%, rgba(255,255,255,.05), transparent 65%),
+      linear-gradient(to bottom, var(--wallTop, #4a3a52), var(--wallBot, #2a1a32));
+    transition: background 1s ease;
+  }
+  #roomWall::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
+    background: linear-gradient(to bottom, rgba(0,0,0,.35), transparent);
+  }
+  #roomFloor {
+    position: absolute; left: -10%; right: -10%; bottom: 0; height: 38%;
+    background: var(--floorBg, linear-gradient(to bottom, #4a2a12, #2a1408));
+    box-shadow: inset 0 12px 24px rgba(0,0,0,.55);
+    transition: background 1s ease;
+  }
+  #roomFloor::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, rgba(0,0,0,.15) 0 1px, transparent 1px 44px);
+    pointer-events: none; opacity: .7;
+  }
+  #roomFurniture { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+
+  body[data-room="cuarto"]     { --wallTop:#553c5e; --wallBot:#3a2a42; --floorBg:linear-gradient(to bottom,#6a4020,#3a1e0a); }
+  body[data-room="cocina"]     { --wallTop:#5a4a38; --wallBot:#3a2a1a; --floorBg:repeating-linear-gradient(90deg,#8a7a6a 0 40px,#7a6a5a 40px 42px); }
+  body[data-room="comedor"]    { --wallTop:#6a3e28; --wallBot:#3a2010; --floorBg:linear-gradient(to bottom,#5a3a1a,#2a1408); }
+  body[data-room="sala"]       { --wallTop:#3a505a; --wallBot:#1a2a32; --floorBg:linear-gradient(to bottom,#5a3a2a,#2a1808); }
+  body[data-room="bano"]       { --wallTop:#5a8090; --wallBot:#3a5868; --floorBg:repeating-linear-gradient(45deg,#c8d8e0 0 22px,#a8b8c8 22px 24px); }
+  body[data-room="jardin"]     { --wallTop:#7bb8e0; --wallBot:#a8d0e8; --floorBg:linear-gradient(to bottom,#4a8a3a,#1e4a1a); }
+  body[data-room="biblioteca"] { --wallTop:#4a2e1a; --wallBot:#2a1808; --floorBg:linear-gradient(to bottom,#5a3a1a,#2a1408); }
+  body[data-room="garaje"]     { --wallTop:#3a3a3a; --wallBot:#1a1a1a; --floorBg:linear-gradient(to bottom,#4a4a4a,#1a1a1a); }
+
+  #timeOverlay { position: absolute; inset: 0; pointer-events: none; z-index: 3; transition: background 1.5s ease; }
+  #weatherCanvas { position: absolute; inset: 0; pointer-events: none; z-index: 4; opacity: .85; transition: opacity 1s; }
+  #weatherCanvas.hidden { opacity: 0; }
+
+  header { position: relative; z-index: 5; display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid rgba(232,160,75,.15); backdrop-filter: blur(8px); background: rgba(0,0,0,.15); gap: 8px; }
+  header .name { font-size: 15px; letter-spacing: 3px; color: var(--accent); font-style: italic; }
+  header .level { font-size: 9px; font-family: system-ui, sans-serif; letter-spacing: 1px; color: #f0b8c8; opacity: .9; margin-top: 2px; }
+  header .where { font-size: 9px; font-family: system-ui, sans-serif; opacity: .65; letter-spacing: 1px; }
+  header .stats { display: flex; gap: 8px; font-size: 11px; font-family: system-ui, sans-serif; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .stat { display: flex; align-items: center; gap: 4px; }
+  .stat .bar { width: 40px; height: 4px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+  .stat .bar > i { display: block; height: 100%; transition: width .4s; }
+  #affBar > i { background: linear-gradient(90deg, #e85d75, #e8a04b); }
+  #foodBar > i { background: linear-gradient(90deg, #c9704a, #e8c04b); }
+  #saveDot { width: 7px; height: 7px; border-radius: 50%; background: #4a3a2a; transition: background .4s; }
+  #saveDot.saved { background: #6fc06f; box-shadow: 0 0 8px #6fc06f; }
+  #saveDot.cloud { background: #6fb8ff; box-shadow: 0 0 8px #6fb8ff; }
+  #clock { font-family: system-ui, sans-serif; font-size: 11px; color: var(--accent); font-weight: 600; letter-spacing: 1px; }
+  #weatherBadge { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--accent); }
+  #userAvatar { width: 22px; height: 22px; border-radius: 50%; display: none; border: 1px solid var(--accent); }
+
+  #stage { flex: 1; position: relative; z-index: 3; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  #akane { width: min(76vw, 340px); height: auto; cursor: pointer; filter: drop-shadow(0 20px 40px rgba(0,0,0,.55)); transition: transform .9s ease, opacity .5s ease; position: relative; z-index: 5; }
+  #body-group { animation: float 4s ease-in-out infinite; transform-origin: 200px 480px; }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  body.sitting #body-group, body.lying #body-group, body.sleeping #body-group, body.yawning #body-group, body.stretching #body-group { animation: none; }
+  body.hidden-char #akane { opacity: 0; transform: translateX(-120%); pointer-events: none; }
+
+  #arms-standing, #arms-sitting { transition: transform .5s cubic-bezier(.4,0,.2,1); transform-origin: 200px 320px; }
+  body.stretching #arms-standing { transform: translateY(-30px) rotate(0deg); }
+
+  #bubble { position: absolute; top: 6%; left: 50%; transform: translateX(-50%) scale(.85); background: var(--panel); padding: 9px 18px; border-radius: 18px; font-size: 14px; font-family: system-ui, sans-serif; border: 1px solid rgba(232,160,75,.3); box-shadow: 0 8px 28px rgba(0,0,0,.5); opacity: 0; transition: all .3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; max-width: 85vw; z-index: 8; text-align: center; }
+  #bubble.show { opacity: 1; transform: translateX(-50%) scale(1); }
+
+  #subtitle { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%) translateY(10px); background: rgba(10,6,4,.85); padding: 7px 16px; border-radius: 8px; border-left: 3px solid var(--accent); font-family: system-ui, sans-serif; text-align: center; opacity: 0; transition: all .35s; pointer-events: none; max-width: 88vw; z-index: 8; }
+  #subtitle.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #subtitle .ja { font-size: 12px; color: var(--accent); letter-spacing: 1px; }
+  #subtitle .es { font-size: 13px; margin-top: 2px; font-style: italic; }
+
+  #fxLayer { position: absolute; inset: 0; pointer-events: none; z-index: 6; overflow: hidden; }
+  .heart-fx { position: absolute; font-size: 22px; will-change: transform, opacity; animation: heartUp 1.5s ease-out forwards; text-shadow: 0 2px 8px rgba(0,0,0,.4); }
+  @keyframes heartUp {
+    0%   { opacity: 0; transform: translate(-50%, 0) scale(.4) rotate(0deg); }
+    18%  { opacity: 1; transform: translate(-50%, -12px) scale(1.15) rotate(-8deg); }
+    100% { opacity: 0; transform: translate(-50%, -130px) scale(1.4) rotate(10deg); }
+  }
+  .spark-fx { position: absolute; font-size: 16px; will-change: transform, opacity; animation: sparkle 1s ease-out forwards; }
+  @keyframes sparkle {
+    0%   { opacity: 0; transform: scale(.3); }
+    40%  { opacity: 1; transform: scale(1.2); }
+    100% { opacity: 0; transform: scale(.4) translateY(-30px); }
+  }
+
+  #foodFly { position: absolute; font-size: 40px; opacity: 0; pointer-events: none; z-index: 7; transition: opacity .2s, left .5s ease, top .5s ease, transform .4s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)); }
+  #foodFly.show { opacity: 1; }
+  #awayNotice { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.7); padding: 8px 16px; border-radius: 20px; font-family: system-ui, sans-serif; font-size: 12px; opacity: 0; transition: opacity .4s; pointer-events: none; z-index: 7; text-align: center; }
+  #awayNotice.show { opacity: 1; }
+
+  #readingPanel { position: absolute; top: 12%; left: 12px; background: rgba(24,17,12,.92); border-left: 3px solid var(--accent); padding: 12px 16px; border-radius: 6px; max-width: 200px; font-family: Georgia, serif; opacity: 0; transform: translateX(-10px); transition: all .5s ease; pointer-events: none; z-index: 7; }
+  #readingPanel.show { opacity: 1; transform: translateX(0); }
+  #readingPanel .title { font-size: 10px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; font-family: system-ui, sans-serif; }
+  #readingPanel .line { font-size: 13px; line-height: 1.5; font-style: italic; }
+
+  #zzz { position: absolute; top: 22%; left: 58%; font-family: system-ui, sans-serif; font-size: 22px; color: var(--accent); opacity: 0; pointer-events: none; z-index: 7; transition: opacity .3s; }
+  body.sleeping #zzz { opacity: 1; animation: zzzFloat 3s infinite; }
+  @keyframes zzzFloat { 0% { transform: translate(0,0) scale(.8); opacity: 0; } 30% { opacity: 1; } 100% { transform: translate(30px,-60px) scale(1.2); opacity: 0; } }
+
+  footer { position: relative; z-index: 5; padding: 8px 12px 18px; border-top: 1px solid rgba(232,160,75,.15); background: linear-gradient(to top, rgba(0,0,0,.55), transparent); }
+  .actions { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; }
+  .actions button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(232,160,75,.3); background: rgba(40,28,20,.9); color: var(--accent); font-size: 17px; cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; }
+  .actions button:active { transform: scale(.92); }
+  .actions button.rec { background: #8a2e3e; color: #fff; border-color: #c9506b; animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { transform: scale(1.08); } }
+  #btnGarage { display: none !important; }
+  body[data-room="garaje"] #btnGarage { display: flex !important; }
+
+  .panel { position: absolute; bottom: 0; left: 0; right: 0; background: var(--panel); border-top: 1px solid rgba(232,160,75,.3); padding: 16px 16px 24px; transform: translateY(100%); transition: transform .35s cubic-bezier(.4,0,.2,1); backdrop-filter: blur(14px); z-index: 20; border-radius: 20px 20px 0 0; max-height: 72vh; overflow-y: auto; }
+  .panel.open { transform: translateY(0); }
+  .panel h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: var(--accent); margin-bottom: 10px; font-family: system-ui, sans-serif; font-weight: 500; }
+  .panel-close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--cream); font-size: 22px; cursor: pointer; opacity: .55; padding: 4px 10px; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tabs button { background: rgba(255,255,255,.05); border: 1px solid rgba(232,160,75,.15); color: var(--cream); opacity: .6; padding: 6px 12px; border-radius: 20px; font-family: system-ui, sans-serif; font-size: 11px; cursor: pointer; transition: all .2s; }
+  .tabs button.active { opacity: 1; border-color: var(--accent); color: var(--accent); background: rgba(232,160,75,.1); }
+
+  .items { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; flex-wrap: wrap; }
+  .items::-webkit-scrollbar { display: none; }
+  .item { flex: 0 0 auto; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 9px 5px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(232,160,75,.15); cursor: pointer; transition: all .2s; }
+  .item:active { transform: scale(.95); }
+  .item.active { border-color: var(--accent); background: rgba(232,160,75,.15); }
+  .item .icon { font-size: 22px; }
+  .item .swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255,255,255,.2); }
+  .item .label { font-size: 9px; opacity: .85; font-family: system-ui, sans-serif; text-align: center; }
+
+  .voice-list { display: flex; flex-direction: column; gap: 5px; }
+  .voice-item { padding: 9px 12px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid rgba(232,160,75,.15); cursor: pointer; font-family: system-ui, sans-serif; font-size: 11px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .voice-item.active { border-color: var(--accent); background: rgba(232,160,75,.15); }
+  .voice-item .tag { font-size: 9px; padding: 2px 6px; border-radius: 6px; background: rgba(232,160,75,.2); color: var(--accent); letter-spacing: 1px; }
+
+  .name-input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(232,160,75,.3); background: rgba(255,255,255,.05); color: var(--cream); font-family: system-ui, sans-serif; font-size: 14px; margin-bottom: 12px; }
+  .name-input:focus { outline: none; border-color: var(--accent); }
+  .btn-primary { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--accent); color: #1a1208; font-family: system-ui, sans-serif; font-weight: 600; letter-spacing: 1px; cursor: pointer; margin-bottom: 8px; }
+  .btn-primary:active { transform: scale(.98); }
+  .btn-google { background: #fff; color: #1a1208; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-danger { background: rgba(200,60,60,.2); color: #ff8888; border: 1px solid rgba(200,60,60,.4); }
+
+  .toggle-row { display: flex; justify-content: space-between; align-items: center; font-family: system-ui, sans-serif; font-size: 13px; margin-bottom: 10px; padding: 10px 12px; background: rgba(255,255,255,.04); border-radius: 10px; }
+  .toggle-row input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); }
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 12px; background: rgba(255,255,255,.04); border-radius: 10px; font-family: system-ui, sans-serif; font-size: 12px; }
+  .slider-row input[type=range] { flex: 1; accent-color: var(--accent); }
+  .info-box { font-family: system-ui, sans-serif; font-size: 11px; opacity: .7; line-height: 1.6; margin-top: 10px; }
+
+  .blink .eye { transform: scaleY(.05); }
+  .eye { transform-box: fill-box; transform-origin: center; transition: transform .08s; }
+  body.sleeping .eye, body.yawning .eye, body.stretching .eye { display: none; }
+  body.sleeping #eyesClosed, body.yawning #eyesClosed, body.stretching #eyesClosed { display: block !important; }
+  .cheek { transform-box: fill-box; transform-origin: center; transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
+  body.eating .cheek { transform: scale(2.2); }
+  body.angry .cheek { transform: scale(2.8); }
+  body.yawning .cheek { transform: scale(1.4); }
+  #blushL, #blushR { transition: opacity .4s ease; }
+  body.blush #blushL, body.blush #blushR { opacity: .95; }
+  #eyebrowL, #eyebrowR { transition: all .25s ease; }
+  body.angry #eyebrowL { transform: rotate(22deg) translate(2px, 4px); transform-origin: 168px 170px; }
+  body.angry #eyebrowR { transform: rotate(-22deg) translate(-2px, 4px); transform-origin: 232px 170px; }
+  body.yawning #eyebrowL, body.yawning #eyebrowR { transform: translateY(-4px); }
+
+  #garageGame { position: absolute; inset: 0; background: rgba(8,5,3,.94); z-index: 30; display: none; flex-direction: column; padding: 20px; font-family: system-ui, sans-serif; }
+  #garageGame.open { display: flex; }
+  #garageGame .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  #garageGame h2 { font-size: 14px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; font-weight: 500; }
+  #garageGame .close { background: none; border: none; color: var(--cream); font-size: 22px; cursor: pointer; opacity: .7; padding: 4px 10px; }
+  #garageGame .stage-car { flex: 1; display: flex; align-items: center; justify-content: center; }
+  #garageGame svg.car { width: 100%; max-width: 500px; height: auto; }
+  #garageGame .progress { height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden; margin-top: 14px; }
+  #garageGame .progress > i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #e8a04b, #6fc06f); transition: width .5s ease; }
+  #garageGame .status { font-size: 12px; margin-top: 8px; opacity: .8; text-align: center; }
+  .hotspot { cursor: pointer; animation: pulseHS 1.5s infinite; }
+  @keyframes pulseHS { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  .hotspot.done { animation: none; opacity: 0 !important; pointer-events: none; }
+  .hotspot circle { pointer-events: all; }
+</style>
+</head>
+<body data-room="cuarto">
+
+<div id="scene"></div>
+<div id="roomBack">
+  <div id="roomWall"></div>
+  <div id="roomFloor"></div>
+  <svg id="roomFurniture" viewBox="0 0 400 620" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<div id="timeOverlay"></div>
+<canvas id="weatherCanvas"></canvas>
+
+<header>
+  <div>
+    <div class="name" id="charNameLabel">AKANE</div>
+    <div class="level" id="affLevel">🖤 Extraña</div>
+    <div class="where" id="whereLabel">Día 1 · Su cuarto · mañana</div>
+  </div>
+  <div class="stats">
+    <img id="userAvatar" alt="">
+    <div class="stat" id="weatherBadge"><span id="wIcon">☀️</span><span id="wTemp">--°</span></div>
+    <div class="stat"><span id="clock">--:--</span></div>
+    <div class="stat">❤ <div class="bar" id="affBar"><i></i></div></div>
+    <div class="stat">🍽 <div class="bar" id="foodBar"><i></i></div></div>
+    <div class="stat"><div id="saveDot"></div></div>
+  </div>
+</header>
+
+<main id="stage">
+  <div id="bubble">Hola.</div>
+  <div id="subtitle"><div class="ja"></div><div class="es"></div></div>
+  <div id="fxLayer"></div>
+  <div id="foodFly">🍓</div>
+  <div id="awayNotice">No está aquí ahora mismo...</div>
+  <div id="readingPanel"><div class="title" id="readTitle"></div><div class="line" id="readLine"></div></div>
+  <div id="zzz">💤</div>
+
+  <svg id="akane" viewBox="0 0 400 620" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="hairGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FFC28C"/>
+        <stop offset="28%" stop-color="#F08A4B"/>
+        <stop offset="62%" stop-color="#D9531E"/>
+        <stop offset="100%" stop-color="#7A2810"/>
+      </linearGradient>
+      <linearGradient id="hairBackGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#D9531E"/>
+        <stop offset="100%" stop-color="#3A1008"/>
+      </linearGradient>
+      <radialGradient id="eyeGrad" cx="50%" cy="30%">
+        <stop offset="0%" stop-color="#D8F0FA"/>
+        <stop offset="45%" stop-color="#6BB8D8"/>
+        <stop offset="100%" stop-color="#1F4A6B"/>
+      </radialGradient>
+      <radialGradient id="cheekGrad" cx="50%" cy="50%">
+        <stop offset="0%" stop-color="#E88B8B" stop-opacity=".75"/>
+        <stop offset="100%" stop-color="#E88B8B" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="skinGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FFE0C8"/>
+        <stop offset="100%" stop-color="#EFB896"/>
+      </linearGradient>
+      <linearGradient id="dressGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FFFEFA"/>
+        <stop offset="100%" stop-color="#E5D8C2"/>
+      </linearGradient>
+    </defs>
+
+    <g id="body-group">
+      <g id="body-inner">
+
+        <g id="hair-back">
+          <path d="M118 150 Q104 240 116 330 Q120 365 138 372 Q130 320 128 260 Q126 210 134 175 Z" fill="url(#hairBackGrad)"/>
+          <path d="M282 150 Q296 240 284 330 Q280 365 262 372 Q270 320 272 260 Q274 210 266 175 Z" fill="url(#hairBackGrad)"/>
+        </g>
+
+        <g id="legs-standing">
+          <path d="M158 480 Q152 540 148 590 L192 590 Q190 540 186 480 Z" fill="url(#skinGrad)"/>
+          <path d="M214 480 Q210 540 208 590 L252 590 Q248 540 242 480 Z" fill="url(#skinGrad)"/>
+          <path d="M162 528 Q170 524 180 528" stroke="#D89878" stroke-width="1.2" fill="none" opacity=".5"/>
+          <path d="M220 528 Q228 524 238 528" stroke="#D89878" stroke-width="1.2" fill="none" opacity=".5"/>
+        </g>
+
+        <g id="legs-sitting" style="display:none">
+          <ellipse cx="162" cy="488" rx="30" ry="18" fill="url(#skinGrad)"/>
+          <ellipse cx="238" cy="488" rx="30" ry="18" fill="url(#skinGrad)"/>
+          <path d="M140 494 Q136 545 134 592 L182 592 Q180 545 178 494 Z" fill="url(#skinGrad)"/>
+          <path d="M222 494 Q220 545 218 592 L266 592 Q264 545 260 494 Z" fill="url(#skinGrad)"/>
+        </g>
+
+        <g id="arms-standing">
+          <path d="M132 320 Q114 400 120 470 Q122 486 138 484 Q144 420 148 340 Z" fill="url(#skinGrad)"/>
+          <path d="M268 320 Q286 400 280 470 Q278 486 262 484 Q256 420 252 340 Z" fill="url(#skinGrad)"/>
+        </g>
+
+        <g id="arms-sitting" style="display:none">
+          <path d="M144 325 Q126 400 142 476 Q148 490 162 484 Q168 420 168 345 Z" fill="url(#skinGrad)"/>
+          <path d="M256 325 Q274 400 258 476 Q252 490 238 484 Q232 420 232 345 Z" fill="url(#skinGrad)"/>
+        </g>
+
+        <g id="layer-torso">
+          <path d="M148 305 Q142 292 158 288 L242 288 Q258 292 252 305 L258 400 Q262 460 252 495 L148 495 Q138 460 142 400 Z" fill="url(#skinGrad)"/>
+        </g>
+
+        <g id="layer-base">
+          <path d="M156 300 Q152 288 164 286 L236 286 Q248 288 244 300 L248 400 Q248 450 244 490 L156 490 Q152 450 152 400 Z" fill="#F0E6DC"/>
+        </g>
+
+        <g id="outfit-dress" class="outfit">
+          <path id="dress-body" d="M150 305 Q146 292 158 288 L242 288 Q254 292 250 305 L256 400 Q258 420 252 430 L148 430 Q142 420 144 400 Z"
+                fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.3"/>
+          <path d="M162 288 L156 278" stroke="url(#dressGrad)" stroke-width="7" stroke-linecap="round"/>
+          <path d="M238 288 L244 278" stroke="url(#dressGrad)" stroke-width="7" stroke-linecap="round"/>
+          <path d="M146 400 L254 400 L254 415 L146 415 Z" fill="#EFE3CC" opacity=".95"/>
+          <path d="M152 405 L248 405" stroke="#DDD0B8" stroke-width="1"/>
+          <path d="M146 413 Q140 475 130 510 Q128 520 145 522 Q200 532 255 522 Q272 520 270 510 Q260 475 254 413 Z"
+                fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.3"/>
+          <g stroke="#DDD0B8" stroke-width="1" opacity=".7" fill="none">
+            <path d="M172 415 L160 518"/>
+            <path d="M200 415 L200 526"/>
+            <path d="M228 415 L240 518"/>
+          </g>
+        </g>
+
+        <g id="outfit-pijama" class="outfit" style="display:none">
+          <path id="pijama-body" d="M148 305 Q146 292 158 288 L242 288 Q254 292 252 305 L260 500 Q260 512 248 516 L152 516 Q140 512 140 500 Z"
+                fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.2"/>
+          <circle cx="170" cy="350" r="3" fill="#E8D8C0" opacity=".7"/>
+          <circle cx="200" cy="380" r="3" fill="#E8D8C0" opacity=".7"/>
+          <circle cx="232" cy="345" r="3" fill="#E8D8C0" opacity=".7"/>
+          <circle cx="180" cy="430" r="3" fill="#E8D8C0" opacity=".7"/>
+          <circle cx="222" cy="460" r="3" fill="#E8D8C0" opacity=".7"/>
+        </g>
+
+        <g id="outfit-casual" class="outfit" style="display:none">
+          <path id="tshirt" d="M146 305 Q142 292 158 288 L242 288 Q258 292 254 305 L258 410 L142 410 Z" fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.2"/>
+          <path id="shorts" d="M142 408 L136 490 Q134 502 148 504 L200 508 L200 470 L252 504 Q266 502 264 490 L258 408 Z" fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.2"/>
+        </g>
+
+        <g id="outfit-kimono" class="outfit" style="display:none">
+          <path id="kimono-body" d="M140 305 Q136 290 152 286 L248 286 Q264 290 260 305 L266 500 Q268 518 254 524 Q200 534 146 524 Q132 518 134 500 Z" fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.3"/>
+          <path d="M164 288 L200 330 L236 288" fill="none" stroke="#DDD0B8" stroke-width="2.5"/>
+          <path id="kimono-obi" d="M144 400 L256 400 L258 432 L142 432 Z" fill="#8B4A5A" stroke="#5a2a3a" stroke-width="1"/>
+        </g>
+
+        <g id="outfit-yukata" class="outfit" style="display:none">
+          <path id="yukata-body" d="M140 305 Q136 290 152 286 L248 286 Q264 290 260 305 L264 500 Q266 518 252 524 Q200 534 148 524 Q134 518 136 500 Z" fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.3"/>
+          <path d="M164 288 L200 340 L236 288" fill="none" stroke="#DDD0B8" stroke-width="2.5"/>
+          <path d="M142 410 L258 410 L260 438 L140 438 Z" fill="#C94A6A" stroke="#7a2030" stroke-width="1"/>
+        </g>
+
+        <g id="outfit-hoodie" class="outfit" style="display:none">
+          <path id="hoodie-body" d="M142 305 Q138 290 156 286 L244 286 Q262 290 258 305 L264 505 Q266 520 250 524 Q200 534 150 524 Q134 520 136 505 Z" fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.3"/>
+          <path id="hoodie-hood" d="M164 288 Q200 262 236 288 Q224 306 200 310 Q176 306 164 288 Z" fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.2"/>
+        </g>
+
+        <g id="outfit-blazer" class="outfit" style="display:none">
+          <path id="blazer-body" d="M140 305 Q136 288 154 284 L246 284 Q264 288 260 305 L268 505 Q270 520 254 524 Q200 534 146 524 Q130 520 132 505 Z" fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.3"/>
+          <path d="M164 286 L200 380 L236 286" fill="none" stroke="#DDD0B8" stroke-width="2.5"/>
+          <path d="M164 286 L156 500 M236 286 L244 500" stroke="#DDD0B8" stroke-width="1.2" fill="none" opacity=".6"/>
+        </g>
+
+        <g id="outfit-skirt" class="outfit" style="display:none">
+          <path id="blouse" d="M148 305 Q144 292 158 288 L242 288 Q256 292 252 305 L256 400 L144 400 Z" fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.2"/>
+          <path id="skirt" d="M146 400 L130 512 Q128 522 146 524 Q200 534 254 524 Q272 522 270 512 L254 400 Z" fill="url(#dressGrad)" stroke="#DDD0B8" stroke-width="1.3"/>
+        </g>
+
+        <g id="layer-shoes">
+          <g id="shoes-flats">
+            <path d="M146 588 L192 588 L194 606 Q194 612 186 612 L150 612 Q144 612 144 606 Z" fill="#141414"/>
+            <path d="M208 588 L254 588 L256 606 Q256 612 250 612 L212 612 Q206 612 206 606 Z" fill="#141414"/>
+            <path d="M148 592 Q168 586 190 592" stroke="#444" stroke-width="1.5" fill="none"/>
+            <path d="M210 592 Q232 586 252 592" stroke="#444" stroke-width="1.5" fill="none"/>
+            <path d="M146 604 L194 604 M206 604 L254 604" stroke="#000" stroke-width="1" opacity=".6"/>
+          </g>
+          <g id="shoes-none" style="display:none"></g>
+        </g>
+
+        <path d="M186 258 L214 258 L214 296 Q200 306 186 296 Z" fill="url(#skinGrad)"/>
+        <path d="M186 274 Q200 288 214 274 L214 258 L186 258 Z" fill="#E5B195"/>
+
+        <ellipse cx="200" cy="185" rx="72" ry="82" fill="url(#skinGrad)"/>
+        <ellipse cx="200" cy="232" rx="46" ry="22" fill="#E5B195" opacity=".3"/>
+
+        <path d="M124 170 Q122 92 200 86 Q278 92 276 170 Q268 132 246 138 Q230 112 200 112 Q170 112 154 138 Q132 132 124 170 Z" fill="url(#hairGrad)"/>
+        <path d="M124 172 Q118 148 138 138 Q144 152 156 148 Q148 168 142 184 Q130 186 124 172 Z" fill="url(#hairGrad)"/>
+        <path d="M160 118 Q176 108 200 108 Q186 128 178 152 Q166 148 160 118 Z" fill="url(#hairGrad)"/>
+        <path d="M240 118 Q224 108 200 108 Q214 128 222 152 Q234 148 240 118 Z" fill="url(#hairGrad)"/>
+        <path d="M276 172 Q282 148 262 138 Q256 152 244 148 Q252 168 258 184 Q270 186 276 172 Z" fill="url(#hairGrad)"/>
+
+        <path d="M116 190 Q108 230 116 275 Q124 300 138 305 Q132 260 130 220 Q124 200 116 190 Z" fill="url(#hairGrad)"/>
+        <path d="M284 190 Q292 230 284 275 Q276 300 262 305 Q268 260 270 220 Q276 200 284 190 Z" fill="url(#hairGrad)"/>
+        <circle cx="118" cy="200" r="18" fill="url(#hairGrad)"/>
+        <circle cx="108" cy="240" r="16" fill="url(#hairGrad)"/>
+        <circle cx="114" cy="275" r="14" fill="url(#hairGrad)"/>
+        <circle cx="124" cy="300" r="11" fill="url(#hairGrad)"/>
+        <circle cx="282" cy="200" r="18" fill="url(#hairGrad)"/>
+        <circle cx="292" cy="240" r="16" fill="url(#hairGrad)"/>
+        <circle cx="286" cy="275" r="14" fill="url(#hairGrad)"/>
+        <circle cx="276" cy="300" r="11" fill="url(#hairGrad)"/>
+
+        <path id="eyebrowL" d="M150 172 Q168 162 184 170" stroke="#A04518" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+        <path id="eyebrowR" d="M216 170 Q232 162 250 172" stroke="#A04518" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+
+        <g class="eye">
+          <ellipse cx="164" cy="204" rx="18" ry="22" fill="#fff"/>
+          <ellipse cx="164" cy="206" rx="14" ry="20" fill="url(#eyeGrad)"/>
+          <ellipse cx="164" cy="209" rx="6" ry="9" fill="#0a1a2a"/>
+          <circle cx="158" cy="195" r="5" fill="#fff"/>
+          <circle cx="170" cy="216" r="2" fill="#fff" opacity=".8"/>
+        </g>
+        <g class="eye">
+          <ellipse cx="236" cy="204" rx="18" ry="22" fill="#fff"/>
+          <ellipse cx="236" cy="206" rx="14" ry="20" fill="url(#eyeGrad)"/>
+          <ellipse cx="236" cy="209" rx="6" ry="9" fill="#0a1a2a"/>
+          <circle cx="230" cy="195" r="5" fill="#fff"/>
+          <circle cx="242" cy="216" r="2" fill="#fff" opacity=".8"/>
+        </g>
+        <path d="M146 196 Q164 186 182 196" stroke="#2a1008" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M218 196 Q236 186 254 196" stroke="#2a1008" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+        <g id="eyesClosed" style="display:none">
+          <path d="M146 206 Q164 222 182 206" stroke="#2a1008" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M218 206 Q236 222 254 206" stroke="#2a1008" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <ellipse id="blushL" cx="142" cy="234" rx="18" ry="9" fill="url(#cheekGrad)" opacity=".55"/>
+        <ellipse id="blushR" cx="258" cy="234" rx="18" ry="9" fill="url(#cheekGrad)" opacity=".55"/>
+
+        <path d="M200 224 Q203 228 197 230" stroke="#D9A88A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <ellipse id="mouth" cx="200" cy="250" rx="9" ry="3" fill="#B86060"/>
+
+        <g id="bookProp" style="display:none">
+          <rect x="168" y="330" width="66" height="46" rx="3" fill="#8a3a3a" stroke="#5a1a1a" stroke-width="1.5"/>
+          <rect x="199" y="332" width="4" height="42" fill="#f5e8d8"/>
+        </g>
+
+        <g id="sleepBlanket" style="display:none">
+          <path d="M40 470 Q30 490 34 560 Q38 600 70 610 Q200 630 330 610 Q362 600 366 560 Q370 490 360 470 Q200 450 40 470 Z"
+                fill="#6a4a7a" stroke="#3a2a4a" stroke-width="2"/>
+          <path d="M60 510 Q140 500 200 505 Q260 510 340 500" stroke="#5a3a6a" stroke-width="2.5" fill="none" opacity=".55"/>
+          <path d="M56 560 Q140 550 200 555 Q260 560 344 550" stroke="#5a3a6a" stroke-width="2.5" fill="none" opacity=".45"/>
+          <path d="M40 470 Q200 462 360 470" stroke="#8a6a9a" stroke-width="3" fill="none" opacity=".6"/>
+        </g>
+
+      </g>
+    </g>
+  </svg>
+</main>
+
+<div id="garageGame">
+  <div class="head">
+    <h2>🔧 Arreglando el Subaru</h2>
+    <button class="close" id="closeGarage">×</button>
+  </div>
+  <div class="stage-car">
+    <svg class="car" viewBox="0 0 500 220">
+      <rect x="0" y="180" width="500" height="40" fill="#1a1a1a"/>
+      <rect x="50" y="175" width="400" height="8" fill="#4a4a4a"/>
+      <g id="gameCar">
+        <ellipse cx="250" cy="180" rx="200" ry="12" fill="#000" opacity=".5"/>
+        <path d="M50 165 L50 130 Q50 118 70 118 L100 118 L145 68 Q155 55 180 55 L360 55 Q385 55 395 68 L440 118 L460 118 Q480 118 480 130 L480 165 Q480 175 465 175 L65 175 Q50 175 50 165 Z" fill="#1E4A8B" stroke="#0a2038" stroke-width="3"/>
+        <path d="M152 68 Q162 58 180 58 L360 58 Q380 58 388 70 L420 115 L135 115 Z" fill="#1E4A8B" stroke="#0a2038" stroke-width="2"/>
+        <path d="M160 70 L200 70 L200 110 L145 110 Z" fill="#5a7a9a" opacity=".85"/>
+        <path d="M210 70 L290 70 L290 110 L210 110 Z" fill="#5a7a9a" opacity=".85"/>
+        <path d="M300 70 L360 70 Q378 70 388 90 L390 110 L300 110 Z" fill="#5a7a9a" opacity=".85"/>
+        <path d="M50 140 L480 140 L480 148 L50 148 Z" fill="#D4A843"/>
+        <rect x="30" y="100" width="40" height="8" fill="#0a2038"/>
+        <rect x="25" y="72" width="50" height="6" fill="#0a2038"/>
+        <rect x="462" y="135" width="20" height="14" rx="4" fill="#e8e8a0"/>
+        <rect x="50" y="135" width="16" height="14" rx="3" fill="#c94a4a"/>
+        <circle cx="120" cy="170" r="34" fill="#1a1a1a"/>
+        <circle cx="120" cy="170" r="22" fill="#D4A843" stroke="#8a6a20" stroke-width="3"/>
+        <circle cx="400" cy="170" r="34" fill="#1a1a1a"/>
+        <circle cx="400" cy="170" r="22" fill="#D4A843" stroke="#8a6a20" stroke-width="3"/>
+        <g id="hotspots">
+          <g class="hotspot" data-part="motor"><circle cx="430" cy="110" r="14" fill="#e8a04b" opacity=".9"/><text x="430" y="116" text-anchor="middle" font-size="14" fill="#1a1208">🔧</text></g>
+          <g class="hotspot" data-part="bateria"><circle cx="340" cy="120" r="14" fill="#e8a04b" opacity=".9"/><text x="340" y="126" text-anchor="middle" font-size="14" fill="#1a1208">⚡</text></g>
+          <g class="hotspot" data-part="aceite"><circle cx="250" cy="120" r="14" fill="#e8a04b" opacity=".9"/><text x="250" y="126" text-anchor="middle" font-size="14" fill="#1a1208">🛢️</text></g>
+          <g class="hotspot" data-part="freno"><circle cx="400" cy="170" r="14" fill="#e8a04b" opacity=".9"/><text x="400" y="176" text-anchor="middle" font-size="14" fill="#1a1208">🔩</text></g>
+          <g class="hotspot" data-part="rueda"><circle cx="120" cy="170" r="14" fill="#e8a04b" opacity=".9"/><text x="120" y="176" text-anchor="middle" font-size="14" fill="#1a1208">🛞</text></g>
+          <g class="hotspot" data-part="escape"><circle cx="80" cy="150" r="14" fill="#e8a04b" opacity=".9"/><text x="80" y="156" text-anchor="middle" font-size="14" fill="#1a1208">💨</text></g>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <div class="progress"><i id="carProgress"></i></div>
+  <div class="status" id="carStatus">Toca cada punto para reparar (0/6)</div>
+</div>
+
+<footer>
+  <div class="actions">
+    <button id="btnMic" title="Repetir voz">🎤</button>
+    <button id="btnFood" title="Comida">🍽</button>
+    <button id="btnWardrobe" title="Vestuario">👗</button>
+    <button id="btnSpeak" title="Hablar">🗣</button>
+    <button id="btnRooms" title="Cuartos">🚪</button>
+    <button id="btnGarage" title="Arreglar auto">🔧</button>
+    <button id="btnWeather" title="Actualizar clima">🌤</button>
+    <button id="btnSettings" title="Ajustes">⚙</button>
+    <button id="btnReset" title="Borrar progreso">🗑</button>
+  </div>
+</footer>
+
+<div class="panel" id="foodPanel"><button class="panel-close" data-close>×</button><h3>Comida</h3><div class="items" id="foodItems"></div></div>
+
+<div class="panel" id="wardrobePanel">
+  <button class="panel-close" data-close>×</button><h3>Vestuario</h3>
+  <div class="tabs">
+    <button data-tab="outfits" class="active">Prenda</button>
+    <button data-tab="colors">Color</button>
+    <button data-tab="shoes">Zapatos</button>
+  </div>
+  <div class="items" id="outfitsItems"></div>
+  <div class="items" id="colorsItems" hidden></div>
+  <div class="items" id="shoesItems" hidden></div>
+</div>
+
+<div class="panel" id="roomsPanel"><button class="panel-close" data-close>×</button><h3>Ir a...</h3><div class="items" id="roomsItems"></div></div>
+
+<div class="panel" id="settingsPanel">
+  <button class="panel-close" data-close>×</button><h3>Ajustes</h3>
+  <div class="tabs">
+    <button data-stab="account" class="active">Cuenta</button>
+    <button data-stab="name">Nombre</button>
+    <button data-stab="voice">Voz</button>
+    <button data-stab="sound">Sonido</button>
+    <button data-stab="weather">Clima</button>
+  </div>
+  <div id="accountBox">
+    <div id="loginPrompt">
+      <p style="font-family:system-ui;font-size:12px;opacity:.8;margin-bottom:14px;line-height:1.5">
+        Inicia sesión para guardar tu progreso en la nube y sincronizarlo entre dispositivos.
+      </p>
+      <button class="btn-primary btn-google" id="btnGoogle">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.8-2 13.3-5.2l-6.1-5.1C29.2 35.3 26.7 36 24 36c-5.2 0-9.5-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.1 5.1C36.8 39.6 44 34 44 24c0-1.3-.1-2.3-.4-3.5z"/></svg>
+        Continuar con Google
+      </button>
+    </div>
+    <div id="userInfo" style="display:none">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:12px;background:rgba(255,255,255,.04);border-radius:10px">
+        <img id="userPhoto" style="width:44px;height:44px;border-radius:50%;border:1px solid rgba(232,160,75,.4)" alt="">
+        <div>
+          <div id="userName" style="font-family:system-ui;font-size:13px;font-weight:600"></div>
+          <div id="userEmail" style="font-family:system-ui;font-size:11px;opacity:.6"></div>
+        </div>
+      </div>
+      <button class="btn-primary" id="btnSyncNow" style="background:rgba(255,255,255,.1);color:var(--cream)">☁️ Sincronizar ahora</button>
+      <button class="btn-primary btn-danger" id="btnLogout">Cerrar sesión</button>
+    </div>
+  </div>
+  <div id="nameBox" style="display:none">
+    <input type="text" id="nameInput" class="name-input" maxlength="16" placeholder="Akane">
+    <button class="btn-primary" id="saveNameBtn">Guardar nombre</button>
+  </div>
+  <div id="voiceBox" style="display:none">
+    <div class="tabs">
+      <button data-vtab="es" class="active">Español</button>
+      <button data-vtab="ja">Japonés</button>
+    </div>
+    <div class="voice-list" id="voiceEsList"></div>
+    <div class="voice-list" id="voiceJaList" style="display:none"></div>
+  </div>
+  <div id="soundBox" style="display:none">
+    <label class="toggle-row">
+      <span>🌧 Lluvia ambiental</span>
+      <input type="checkbox" id="soundRain">
+    </label>
+    <label class="toggle-row">
+      <span>🌊 Viento / ambiente</span>
+      <input type="checkbox" id="soundWind">
+    </label>
+    <label class="toggle-row">
+      <span>🔔 Auto-activar con el clima</span>
+      <input type="checkbox" id="soundAuto">
+    </label>
+    <div class="slider-row">
+      <span>Volumen</span>
+      <input type="range" id="ambientVol" min="0" max="100" value="40">
+    </div>
+    <p class="info-box">
+      Los sonidos se generan con Web Audio (sin descargas). Se activan solo con un toque en la pantalla porque los navegadores bloquean audio automático.
+    </p>
+  </div>
+  <div id="weatherBox" style="display:none">
+    <p style="font-family:system-ui;font-size:12px;opacity:.8;line-height:1.6;margin-bottom:12px">
+      El clima se obtiene de tu ubicación actual vía Open-Meteo (gratis, sin API key).
+    </p>
+    <label class="toggle-row">
+      <span>👗 Vestir según el clima</span>
+      <input type="checkbox" id="weatherOutfit" checked>
+    </label>
+    <label class="toggle-row">
+      <span>🎨 Efectos visuales</span>
+      <input type="checkbox" id="weatherFX" checked>
+    </label>
+    <button class="btn-primary" id="refetchWeatherBtn">🔄 Volver a consultar</button>
+    <p id="weatherInfo" class="info-box"></p>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc }
+  from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDd0bckquS1liuoMnI8Zw_2ZDPiega3810",
+  authDomain: "akane-sama.firebaseapp.com",
+  projectId: "akane-sama",
+  storageBucket: "akane-sama.firebasestorage.app",
+  messagingSenderId: "316176750160",
+  appId: "1:316176750160:web:1f021d489d17d0e878a355"
+};
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const db = getFirestore(fbApp);
+
+/* ============ HELPERS ============ */
+const $ = id => document.getElementById(id);
+const svg = $('akane'), mouth = $('mouth'), bubble = $('bubble'), subtitle = $('subtitle');
+const foodFly = $('foodFly'), btnMic = $('btnMic'), whereLabel = $('whereLabel');
+const bodyInner = $('body-inner'), saveDot = $('saveDot'), bookProp = $('bookProp');
+const awayNotice = $('awayNotice'), readingPanel = $('readingPanel');
+const readTitle = $('readTitle'), readLine = $('readLine');
+
+/* ============ ESTADO ============ */
+const DEFAULT = {
+  charName: 'Akane', affection: 55, food: 55,
+  outfit: 'dress', color: 'white', shoes: 'flats', room: 'cuarto',
+  voiceEs: null, voiceJa: null, carRepaired: false, carParts: [],
+  weatherFX: true, soundRain: false, soundWind: false, soundAuto: true, ambientVol: 40,
+  weatherOutfit: true, firstPlayDate: null,
+};
+let state = { ...DEFAULT };
+let affection = DEFAULT.affection, food = DEFAULT.food;
+let lastBuffer = null, pitch = 1.35;
+let recorder, chunks = [];
+let currentPose = 'standing';
+let herRoom = 'cuarto', herActivity = 'idle';
+let userLastInteract = Date.now();
+let isSleeping = false;
+let readingTimers = [];
+let currentUser = null;
+
+/* ============ GUARDAR ============ */
+const STORAGE_KEY = 'akane_save_v6';
+let saveTimeout, cloudSaveTimeout;
+function saveGame(immediate = false) {
+  try {
+    state.affection = Math.round(affection);
+    state.food = Math.round(food);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    saveDot.classList.add('saved');
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => saveDot.classList.remove('saved'), 1200);
+    if (currentUser) {
+      clearTimeout(cloudSaveTimeout);
+      const doCloud = () => saveCloud(currentUser.uid);
+      if (immediate) doCloud(); else cloudSaveTimeout = setTimeout(doCloud, 4000);
+    }
+  } catch (e) {}
+}
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    Object.assign(state, d);
+    affection = state.affection; food = state.food;
+    $('charNameLabel').textContent = state.charName.toUpperCase();
+    $('nameInput').value = state.charName;
+    return true;
+  } catch { return false; }
+}
+async function saveCloud(uid) {
+  if (!currentUser) return;
+  try {
+    await setDoc(doc(db, 'saves', uid), { ...state, updatedAt: Date.now() });
+    saveDot.classList.add('cloud');
+    setTimeout(() => saveDot.classList.remove('cloud'), 1500);
+  } catch (e) { console.warn('Cloud save error', e); }
+}
+async function loadCloud(uid) {
+  try {
+    const snap = await getDoc(doc(db, 'saves', uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      delete data.updatedAt;
+      Object.assign(state, data);
+      affection = state.affection; food = state.food;
+      applyAllState();
+      say('Progreso cargado desde la nube.', 2500);
+    } else {
+      await saveCloud(uid);
+      say('¡Bienvenido! Tu progreso se guardará en la nube.', 3000);
+    }
+  } catch (e) { console.warn('Cloud load error', e); }
+}
+function applyAllState() {
+  $('charNameLabel').textContent = state.charName.toUpperCase();
+  $('nameInput').value = state.charName;
+  setBars();
+  applyScene();
+  document.querySelectorAll('.outfit').forEach(g => g.style.display = 'none');
+  if (state.outfit !== 'base') {
+    const g = document.getElementById('outfit-' + state.outfit);
+    if (g) g.style.display = '';
+  }
+  applyColor(state.color);
+  $('shoes-flats').style.display = state.shoes === 'flats' ? '' : 'none';
+  $('shoes-none').style.display = state.shoes === 'none' ? '' : 'none';
+  $('weatherFX').checked = state.weatherFX;
+  $('soundRain').checked = state.soundRain;
+  $('soundWind').checked = state.soundWind;
+  $('soundAuto').checked = state.soundAuto;
+  $('ambientVol').value = state.ambientVol;
+  $('weatherOutfit').checked = state.weatherOutfit;
+  startWeatherCanvas();
+  applyAmbient();
+}
+
+/* ============ UI ============ */
+const AFFECTION_LEVELS = [
+  { min: 0,  name: 'Extraña',      icon: '🖤' },
+  { min: 15, name: 'Conocida',     icon: '🤍' },
+  { min: 35, name: 'Amiga',        icon: '💙' },
+  { min: 55, name: 'Cercana',      icon: '💚' },
+  { min: 75, name: 'Muy cercana',  icon: '💛' },
+  { min: 90, name: 'Especial',     icon: '💖' },
+];
+function getAffectionLevel(v) {
+  let lvl = AFFECTION_LEVELS[0];
+  for (const l of AFFECTION_LEVELS) if (v >= l.min) lvl = l;
+  return lvl;
+}
+function getDaysTogether() {
+  if (!state.firstPlayDate) state.firstPlayDate = Date.now();
+  return Math.max(1, Math.floor((Date.now() - state.firstPlayDate) / 86400000) + 1);
+}
+function setBars() {
+  document.querySelector('#affBar > i').style.width = affection + '%';
+  document.querySelector('#foodBar > i').style.width = food + '%';
+  const lvl = getAffectionLevel(affection);
+  const el = $('affLevel');
+  if (el) el.textContent = `${lvl.icon} ${lvl.name}`;
+}
+function spawnFX(emoji, x, y, cls = 'heart-fx') {
+  const layer = $('fxLayer'); if (!layer) return;
+  const h = document.createElement('div');
+  h.className = cls;
+  h.textContent = emoji;
+  h.style.left = x + 'px';
+  h.style.top = y + 'px';
+  layer.appendChild(h);
+  setTimeout(() => h.remove(), 1600);
+}
+function spawnHearts(cx, cy) {
+  const n = affection >= 90 ? 4 : affection >= 70 ? 3 : affection >= 40 ? 2 : 1;
+  const emojis = affection >= 90 ? ['💖','💗','💕','✨'] : affection >= 70 ? ['💗','💕','✨'] : ['💗','✨'];
+  for (let i = 0; i < n; i++) {
+    setTimeout(() => spawnFX(
+      emojis[Math.floor(Math.random() * emojis.length)],
+      cx + (Math.random() - .5) * 90,
+      cy + (Math.random() - .5) * 60
+    ), i * 110);
+  }
+}
+function say(txt, ms = 2200) {
+  bubble.textContent = txt;
+  bubble.classList.add('show');
+  clearTimeout(say._t);
+  say._t = setTimeout(() => bubble.classList.remove('show'), ms);
+}
+function blush(ms = 1500) {
+  document.body.classList.add('blush');
+  clearTimeout(blush._t);
+  blush._t = setTimeout(() => document.body.classList.remove('blush'), ms);
+}
+function setMood(m, ms = 0) {
+  document.body.classList.remove('angry', 'eating');
+  if (m) document.body.classList.add(m);
+  if (ms) setTimeout(() => document.body.classList.remove(m), ms);
+}
+function setPose(pose) {
+  currentPose = pose;
+  const sitting = pose === 'sitting';
+  const lying = pose === 'lying';
+  const sleeping = pose === 'sleeping';
+  document.body.classList.toggle('sitting', sitting);
+  document.body.classList.toggle('lying', lying);
+  document.body.classList.toggle('sleeping', sleeping);
+  $('legs-standing').style.display = (sitting || lying || sleeping) ? 'none' : '';
+  $('legs-sitting').style.display  = (sitting || lying) ? '' : 'none';
+  $('arms-standing').style.display = (sitting || lying || sleeping) ? 'none' : '';
+  $('arms-sitting').style.display  = (sitting || lying) ? '' : 'none';
+  bookProp.style.display = (pose === 'lying') ? '' : 'none';
+  $('sleepBlanket').style.display = sleeping ? '' : 'none';
+  if (sleeping) {
+    bodyInner.setAttribute('transform', 'translate(20, 235) rotate(-4 200 380)');
+  } else if (lying) {
+    bodyInner.setAttribute('transform', 'translate(-20, 90) rotate(-78 200 380)');
+  } else if (sitting) {
+    bodyInner.setAttribute('transform', 'translate(0, 38)');
+  } else {
+    bodyInner.setAttribute('transform', '');
+  }
+  const a = $('akane');
+  if (sleeping) a.style.transform = 'translate(-22%, 12%) scale(1.05)';
+  else a.style.transform = '';
+}
+
+/* ============ HORA + CUARTO ============ */
+const rooms = {
+  cuarto:     { label: 'Su cuarto', icon: '🛏', top: '#3b2a3f', mid: '#1a1220', bot: '#0a0710' },
+  cocina:     { label: 'La cocina', icon: '🍳', top: '#3a2a1c', mid: '#2a1d12', bot: '#150e08' },
+  comedor:    { label: 'El comedor', icon: '🍷', top: '#3e2418', mid: '#241410', bot: '#100804' },
+  sala:       { label: 'La sala',   icon: '🛋', top: '#1e2e34', mid: '#131e24', bot: '#070d10' },
+  bano:       { label: 'El baño',   icon: '🛁', top: '#2a3a44', mid: '#182228', bot: '#0a0e12' },
+  jardin:     { label: 'El jardín', icon: '🌳', top: '#1e3a20', mid: '#132618', bot: '#060f08' },
+  biblioteca: { label: 'Biblioteca', icon: '📚', top: '#3a2418', mid: '#241408', bot: '#100804' },
+  garaje:     { label: 'El garaje', icon: '🚗', top: '#1e1a1a', mid: '#141010', bot: '#080606' },
+};
+function getTimeSlot() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 11) return 'mañana';
+  if (h >= 11 && h < 17) return 'tarde';
+  if (h >= 17 && h < 21) return 'atardecer';
+  return 'noche';
+}
+const timeTints = {
+  'mañana':   'linear-gradient(to bottom, rgba(255,190,140,.10), transparent 50%)',
+  'tarde':    'linear-gradient(to bottom, rgba(255,220,160,.08), transparent 55%)',
+  'atardecer':'linear-gradient(to bottom, rgba(255,120,60,.18), rgba(120,40,90,.10) 60%, transparent)',
+  'noche':    'linear-gradient(to bottom, rgba(20,20,70,.4), rgba(5,5,25,.55))',
+};
+
+/* ============ MUEBLES ============ */
+const FURNITURE = {
+  cuarto: (slot) => `
+    <rect x="60" y="60" width="150" height="130" rx="6" fill="#1a1020" stroke="#3a2a3a" stroke-width="5"/>
+    <rect x="66" y="66" width="138" height="118" fill="${slot === 'noche' ? '#1a2040' : slot === 'atardecer' ? '#c95a3a' : '#a8d8e8'}"/>
+    ${slot === 'noche' ? '<circle cx="180" cy="95" r="10" fill="#f5e8a0"/><circle cx="100" cy="120" r="1.2" fill="#fff"/><circle cx="130" cy="90" r="1" fill="#fff"/><circle cx="90" cy="140" r="1.4" fill="#fff"/><circle cx="150" cy="150" r="1" fill="#fff"/>' : ''}
+    <line x1="135" y1="66" x2="135" y2="184" stroke="#3a2a3a" stroke-width="4"/>
+    <line x1="66" y1="125" x2="204" y2="125" stroke="#3a2a3a" stroke-width="4"/>
+    <path d="M50 55 Q68 60 66 190 Q60 200 50 195 Z" fill="#6a3a52" opacity=".85"/>
+    <path d="M220 55 Q202 60 204 190 Q210 200 220 195 Z" fill="#6a3a52" opacity=".85"/>
+    <g>
+      <rect x="30" y="430" width="60" height="180" rx="8" fill="#5a3a1a" stroke="#2a1a08" stroke-width="2"/>
+      <rect x="34" y="434" width="52" height="172" rx="6" fill="#7a4a28"/>
+      <path d="M80 460 Q300 452 380 470 L380 600 Q300 620 80 610 Z" fill="#E8DCC8" stroke="#A89880" stroke-width="2"/>
+      <ellipse cx="120" cy="485" rx="55" ry="28" fill="#FBF2E0" stroke="#C8B8A0" stroke-width="1.5"/>
+      <ellipse cx="120" cy="482" rx="42" ry="20" fill="#FFF8E8" opacity=".7"/>
+      <path d="M170 470 Q320 462 380 480 L380 610 Q300 630 170 620 Q150 550 170 470 Z" fill="#7a5a8a" stroke="#4a3050" stroke-width="2"/>
+      <path d="M190 500 Q270 495 360 505" stroke="#5a3a6a" stroke-width="2" fill="none" opacity=".5"/>
+    </g>
+    <g>
+      <rect x="290" y="460" width="90" height="130" rx="6" fill="#6a3a1a" stroke="#2a1a08" stroke-width="2"/>
+      <rect x="295" y="465" width="80" height="40" rx="3" fill="#4a2810"/>
+      <rect x="295" y="510" width="80" height="40" rx="3" fill="#4a2810"/>
+      <circle cx="335" cy="485" r="3" fill="#D4A843"/>
+      <circle cx="335" cy="530" r="3" fill="#D4A843"/>
+      <ellipse cx="335" cy="450" rx="32" ry="8" fill="#3a2010"/>
+      <path d="M320 450 Q320 415 335 405 Q350 415 350 450 Z" fill="#F5E8A0" opacity=".95"/>
+      <circle cx="335" cy="425" r="14" fill="#FFF8C0" opacity=".6"/>
+    </g>
+    <rect x="240" y="80" width="70" height="90" rx="3" fill="#2a1a10" stroke="#8a6a3a" stroke-width="2"/>
+    <rect x="245" y="85" width="60" height="80" fill="#a8c8e0"/>
+    <circle cx="275" cy="115" r="14" fill="#f5e8a0"/>
+    <path d="M245 145 L265 120 L285 140 L300 125 L305 165 L245 165 Z" fill="#4a7a3a"/>
+  `,
+  cocina: () => `
+    <rect x="40" y="80" width="320" height="110" rx="4" fill="#6a4a2a" stroke="#2a1a08" stroke-width="2"/>
+    <line x1="200" y1="80" x2="200" y2="190" stroke="#2a1a08" stroke-width="2"/>
+    <rect x="60" y="100" width="120" height="70" rx="3" fill="#8a6a4a" stroke="#4a2a10" stroke-width="1.5"/>
+    <rect x="220" y="100" width="120" height="70" rx="3" fill="#8a6a4a" stroke="#4a2a10" stroke-width="1.5"/>
+    <circle cx="120" cy="135" r="3" fill="#D4A843"/>
+    <circle cx="280" cy="135" r="3" fill="#D4A843"/>
+    <rect x="20" y="440" width="360" height="20" fill="#4a4a5a"/>
+    <rect x="20" y="460" width="360" height="80" fill="#5a3a1a" stroke="#2a1a08" stroke-width="2"/>
+    <rect x="30" y="470" width="100" height="60" rx="3" fill="#4a2810"/>
+    <rect x="140" y="470" width="100" height="60" rx="3" fill="#4a2810"/>
+    <rect x="250" y="470" width="120" height="60" rx="3" fill="#4a2810"/>
+    <circle cx="80" cy="500" r="4" fill="#D4A843"/>
+    <circle cx="190" cy="500" r="4" fill="#D4A843"/>
+    <circle cx="310" cy="500" r="4" fill="#D4A843"/>
+    <circle cx="110" cy="430" r="20" fill="#2a2a3a" stroke="#8a8a9a" stroke-width="2"/>
+    <circle cx="180" cy="430" r="20" fill="#2a2a3a" stroke="#8a8a9a" stroke-width="2"/>
+    <circle cx="110" cy="430" r="10" fill="#1a1a2a"/>
+    <circle cx="180" cy="430" r="10" fill="#1a1a2a"/>
+  `,
+  comedor: () => `
+    <rect x="130" y="70" width="140" height="100" rx="4" fill="#3a2010" stroke="#8a6a3a" stroke-width="3"/>
+    <rect x="136" y="76" width="128" height="88" fill="#a8c8e0"/>
+    <circle cx="200" cy="120" r="20" fill="#F5E8A0"/>
+    <ellipse cx="200" cy="480" rx="180" ry="40" fill="#5a3a1a" stroke="#2a1408" stroke-width="3"/>
+    <ellipse cx="200" cy="475" rx="180" ry="40" fill="#7a4a2a"/>
+    <ellipse cx="200" cy="470" rx="170" ry="35" fill="#8a5a3a"/>
+    <rect x="60" y="500" width="40" height="100" rx="4" fill="#6a3a1a"/>
+    <rect x="300" y="500" width="40" height="100" rx="4" fill="#6a3a1a"/>
+    <path d="M170 440 Q170 460 178 465 L178 475 L172 478 L188 478 L182 475 L182 465 Q190 460 190 440 Z" fill="#c0d8e8" opacity=".8"/>
+    <path d="M210 440 Q210 460 218 465 L218 475 L212 478 L228 478 L222 475 L222 465 Q230 460 230 440 Z" fill="#c0d8e8" opacity=".8"/>
+  `,
+  sala: () => `
+    <rect x="240" y="70" width="140" height="160" rx="4" fill="#1a1020" stroke="#3a2a3a" stroke-width="4"/>
+    <rect x="246" y="76" width="128" height="148" fill="#3a4a5a"/>
+    <line x1="310" y1="76" x2="310" y2="224" stroke="#3a2a3a" stroke-width="3"/>
+    <line x1="246" y1="150" x2="374" y2="150" stroke="#3a2a3a" stroke-width="3"/>
+    <rect x="40" y="90" width="160" height="110" rx="6" fill="#0a0a0a" stroke="#2a2a2a" stroke-width="3"/>
+    <rect x="46" y="96" width="148" height="98" fill="#2a4a5a"/>
+    <rect x="60" y="110" width="60" height="6" fill="#6a9ab8" opacity=".7"/>
+    <rect x="60" y="126" width="120" height="4" fill="#6a9ab8" opacity=".5"/>
+    <rect x="60" y="138" width="90" height="4" fill="#6a9ab8" opacity=".5"/>
+    <rect x="60" y="150" width="140" height="4" fill="#6a9ab8" opacity=".5"/>
+    <rect x="60" y="162" width="70" height="4" fill="#6a9ab8" opacity=".5"/>
+    <path d="M20 460 Q20 440 40 440 L360 440 Q380 440 380 460 L380 590 Q380 610 360 610 L40 610 Q20 610 20 590 Z" fill="#5a3548" stroke="#3a2030" stroke-width="2"/>
+    <path d="M40 460 L360 460 L360 510 L40 510 Z" fill="#7a4a62" opacity=".9"/>
+    <rect x="20" y="500" width="40" height="110" rx="10" fill="#6a3a52"/>
+    <rect x="340" y="500" width="40" height="110" rx="10" fill="#6a3a52"/>
+    <rect x="80" y="540" width="50" height="50" rx="6" fill="#8a5a72"/>
+    <rect x="270" y="540" width="50" height="50" rx="6" fill="#8a5a72"/>
+  `,
+  bano: () => `
+    <defs>
+      <pattern id="tiles" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+        <rect width="40" height="40" fill="#a8c8d8"/>
+        <rect width="40" height="40" fill="none" stroke="#7a98a8" stroke-width="2"/>
+      </pattern>
+    </defs>
+    <rect x="0" y="0" width="400" height="400" fill="url(#tiles)" opacity=".6"/>
+    <rect x="140" y="80" width="120" height="160" rx="60" fill="#c8e0e8" stroke="#3a4a5a" stroke-width="4"/>
+    <ellipse cx="200" cy="160" rx="50" ry="70" fill="#d8eef2" opacity=".7"/>
+    <ellipse cx="180" cy="130" rx="20" ry="30" fill="#fff" opacity=".5"/>
+    <ellipse cx="200" cy="380" rx="80" ry="30" fill="#e8e8e8" stroke="#a0a0a0" stroke-width="2"/>
+    <ellipse cx="200" cy="370" rx="70" ry="25" fill="#c8e0e8"/>
+    <ellipse cx="200" cy="365" rx="55" ry="18" fill="#e0f2f6"/>
+    <rect x="195" y="340" width="10" height="30" fill="#a0a0a0"/>
+    <circle cx="200" cy="340" r="6" fill="#a0a0a0"/>
+  `,
+  jardin: () => `
+    <circle cx="330" cy="90" r="40" fill="#FFF2A0" opacity=".9"/>
+    <circle cx="330" cy="90" r="30" fill="#FFF8C8"/>
+    <ellipse cx="60" cy="200" rx="60" ry="90" fill="#2a5a28" opacity=".85"/>
+    <rect x="52" y="270" width="16" height="80" fill="#3a2418"/>
+    <ellipse cx="340" cy="220" rx="70" ry="100" fill="#2a5a28" opacity=".85"/>
+    <rect x="332" y="300" width="16" height="70" fill="#3a2418"/>
+    <rect x="120" y="500" width="160" height="14" rx="4" fill="#7a4a2a"/>
+    <rect x="120" y="480" width="160" height="12" rx="4" fill="#8a5a3a"/>
+    <rect x="126" y="514" width="12" height="60" fill="#5a3a1a"/>
+    <rect x="262" y="514" width="12" height="60" fill="#5a3a1a"/>
+    <rect x="130" y="465" width="140" height="10" rx="4" fill="#8a5a3a"/>
+    <circle cx="90" cy="580" r="8" fill="#e85d75"/>
+    <circle cx="90" cy="580" r="4" fill="#f5e8a0"/>
+    <circle cx="320" cy="590" r="7" fill="#c9506b"/>
+    <circle cx="320" cy="590" r="3" fill="#f5e8a0"/>
+    <circle cx="350" cy="560" r="6" fill="#e8a04b"/>
+    <circle cx="350" cy="560" r="3" fill="#fff"/>
+  `,
+  biblioteca: () => `
+    <rect x="0" y="40" width="400" height="440" fill="#3a2418"/>
+    <rect x="10" y="50" width="380" height="420" fill="#2a1810"/>
+    ${[0,1,2,3,4].map(row => `
+      <rect x="20" y="${70 + row*80}" width="360" height="4" fill="#4a2a10"/>
+      ${Array.from({length: 18}).map((_, i) => {
+        const colors = ['#c95a4a','#4a7ac9','#c9a04a','#c9c94a','#8a4ac9','#4ac98a','#c96a4a'];
+        const c = colors[(i + row) % colors.length];
+        const h = 55 + (i % 3) * 5;
+        return `<rect x="${25 + i*20}" y="${70 + row*80 - h + 60}" width="16" height="${h}" fill="${c}" stroke="#1a0a04" stroke-width="1"/>`;
+      }).join('')}
+    `).join('')}
+    <rect x="60" y="500" width="280" height="14" rx="4" fill="#5a3a20"/>
+    <rect x="80" y="514" width="14" height="80" fill="#4a2a10"/>
+    <rect x="306" y="514" width="14" height="80" fill="#4a2a10"/>
+    <rect x="180" y="470" width="14" height="30" fill="#f5e8d8"/>
+    <ellipse cx="187" cy="470" rx="9" ry="4" fill="#f5e8d8"/>
+    <ellipse cx="187" cy="458" rx="4" ry="8" fill="#f5e8a0" opacity=".9"/>
+  `,
+  garaje: () => `
+    <rect x="60" y="60" width="280" height="240" fill="#3a3a3a" stroke="#1a1a1a" stroke-width="4"/>
+    ${Array.from({length: 6}).map((_, i) => `
+      <rect x="70" y="${70 + i*40}" width="260" height="34" fill="#4a4a4a" stroke="#2a2a2a" stroke-width="1.5"/>
+      <circle cx="200" cy="${88 + i*40}" r="2" fill="#2a2a2a"/>
+    `).join('')}
+    <rect x="350" y="180" width="50" height="300" fill="#2a2a2a"/>
+    <rect x="355" y="200" width="40" height="6" fill="#4a4a4a"/>
+    <rect x="355" y="260" width="40" height="6" fill="#4a4a4a"/>
+    <rect x="355" y="320" width="40" height="6" fill="#4a4a4a"/>
+    <rect x="355" y="380" width="40" height="6" fill="#4a4a4a"/>
+    <rect x="362" y="220" width="14" height="30" fill="#c94a4a"/>
+    <rect x="368" y="280" width="14" height="30" fill="#4a7ac9"/>
+    <circle cx="60" cy="400" r="40" fill="#1a1a1a" stroke="#3a3a3a" stroke-width="3"/>
+    <circle cx="60" cy="400" r="20" fill="#3a3a3a"/>
+  `,
+};
+function drawFurniture(roomId, slot) {
+  const el = $('roomFurniture');
+  if (!el) return;
+  el.innerHTML = (FURNITURE[roomId] || (() => ''))(slot || getTimeSlot());
+}
+function applyScene() {
+  const room = rooms[state.room];
+  const slot = getTimeSlot();
+  const root = document.documentElement;
+  root.style.setProperty('--bg-top', room.top);
+  root.style.setProperty('--bg-mid', room.mid);
+  root.style.setProperty('--bg-bot', room.bot);
+  document.body.style.setProperty('--light',
+    slot === 'noche' ? 'rgba(120,120,200,.10)' :
+    slot === 'atardecer' ? 'rgba(255,140,80,.15)' : 'rgba(255,220,150,.12)');
+  $('timeOverlay').style.background = timeTints[slot];
+  document.body.dataset.room = state.room;
+  document.body.dataset.time = slot;
+  whereLabel.textContent = `Día ${getDaysTogether()} · ${room.label} · ${slot}`;
+  drawFurniture(state.room, slot);
+  startWeatherCanvas();
+}
+
+/* ============ RELOJ ============ */
+function updateClock() {
+  const n = new Date();
+  $('clock').textContent = String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
+  if (!updateClock._last || Date.now() - updateClock._last > 60000) {
+    updateClock._last = Date.now();
+    if (typeof drawFurniture === 'function') drawFurniture(state.room, getTimeSlot());
+  }
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ============ CLIMA ============ */
+let weather = { code: 0, temp: null, condition: 'clear', desc: 'despejado' };
+let weatherCoords = null;
+function codeToCondition(c) {
+  if (c === 0) return 'clear';
+  if (c >= 1 && c <= 3) return 'clouds';
+  if (c === 45 || c === 48) return 'fog';
+  if (c >= 51 && c <= 57) return 'drizzle';
+  if ((c >= 61 && c <= 67) || (c >= 80 && c <= 82)) return 'rain';
+  if (c >= 71 && c <= 77) return 'snow';
+  if (c >= 95) return 'storm';
+  return 'clear';
+}
+function iconFor(cond) {
+  return { clear: '☀️', clouds: '☁️', fog: '🌫️', drizzle: '🌦️', rain: '🌧️', snow: '❄️', storm: '⛈️' }[cond] || '☀️';
+}
+async function fetchWeather() {
+  const info = $('weatherInfo');
+  if (!navigator.geolocation) { applyWeatherDefault(); return; }
+  if (info) info.textContent = 'Obteniendo ubicación...';
+  navigator.geolocation.getCurrentPosition(async pos => {
+    weatherCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherCoords.lat}&longitude=${weatherCoords.lon}&current=temperature_2m,weather_code`;
+      const r = await fetch(url);
+      const data = await r.json();
+      weather.code = data.current.weather_code;
+      weather.temp = Math.round(data.current.temperature_2m);
+      weather.condition = codeToCondition(weather.code);
+      updateWeatherUI();
+      if (info) info.textContent = `${weather.temp}° ${weather.desc}`;
+      setTimeout(() => weatherReaction(), 1500);
+      if (state.weatherOutfit) setTimeout(autoOutfitByWeather, 2500);
+      if (state.soundAuto) autoAmbientByWeather();
+    } catch (e) {
+      if (info) info.textContent = 'Error consultando el clima.';
+      applyWeatherDefault();
+    }
+  }, () => {
+    if (info) info.textContent = 'Permiso denegado. Modo por defecto.';
+    applyWeatherDefault();
+  }, { timeout: 8000, maximumAge: 600000 });
+}
+function applyWeatherDefault() {
+  weather = { code: 1, temp: 22, condition: 'clouds', desc: 'parcialmente nublado' };
+  updateWeatherUI();
+}
+function updateWeatherUI() {
+  $('wIcon').textContent = iconFor(weather.condition);
+  $('wTemp').textContent = weather.temp != null ? weather.temp + '°' : '--°';
+  document.body.dataset.weather = weather.condition;
+  startWeatherCanvas();
+}
+function weatherReaction() {
+  if (herActivity !== 'idle' || isSleeping) return;
+  const lines = {
+    clear: ['Qué día tan lindo hace.', 'El sol se siente bien.'],
+    clouds: ['Está nublado hoy...', 'El cielo está gris.'],
+    fog: ['Hay niebla, ten cuidado.'],
+    drizzle: ['Está lloviznando.'],
+    rain: ['Qué lluvia tan fuerte...', 'Mejor nos quedamos dentro.'],
+    snow: ['¡Está nevando! Qué bonito.'],
+    storm: ['¡Qué truenos! Me asusté.'],
+  };
+  const arr = lines[weather.condition] || ['Qué clima tan raro.'];
+  const t = arr[Math.floor(Math.random() * arr.length)];
+  say(t, 3000); speak(t, 'es', selectedEs);
+}
+function autoOutfitByWeather() {
+  if (herActivity === 'sleeping' || herActivity === 'reading') return;
+  if (state.outfit === 'pijama' || state.outfit === 'base') return;
+  const t = weather.temp ?? 22, cond = weather.condition;
+  let suggested = null;
+  if (t < 10) suggested = 'hoodie';
+  else if (t < 18) suggested = 'blazer';
+  else if (t >= 28) suggested = 'yukata';
+  if (cond === 'rain' || cond === 'storm' || cond === 'drizzle') suggested = t < 15 ? 'hoodie' : 'blazer';
+  if (cond === 'snow') suggested = 'hoodie';
+  if (suggested && suggested !== state.outfit) {
+    setOutfit(suggested);
+    setTimeout(() => say('Me cambié de ropa por el clima.', 2500), 500);
+  }
+}
+
+/* ============ CANVAS CLIMA ============ */
+const canvas = $('weatherCanvas'), ctx2d = canvas.getContext('2d');
+let particles = [], weatherAnimating = false, weatherAnimId = null;
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+function startWeatherCanvas() {
+  if (!state.weatherFX) { canvas.classList.add('hidden'); if (weatherAnimId) cancelAnimationFrame(weatherAnimId); weatherAnimating = false; return; }
+  canvas.classList.remove('hidden');
+  const cond = weather.condition;
+  particles = [];
+  if (cond === 'rain' || cond === 'drizzle' || cond === 'storm') {
+    const count = cond === 'drizzle' ? 60 : cond === 'rain' ? 130 : 180;
+    for (let i = 0; i < count; i++) particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, len: 8 + Math.random() * 18, speed: 4 + Math.random() * 8, angle: -0.15 + Math.random() * 0.1 });
+  } else if (cond === 'snow') {
+    for (let i = 0; i < 90; i++) particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: 1.5 + Math.random() * 3, speed: 0.5 + Math.random() * 1.5, sway: Math.random() * Math.PI * 2, swaySpd: 0.01 + Math.random() * 0.02 });
+  }
+  if (!weatherAnimating) { weatherAnimating = true; animateWeather(); }
+}
+function animateWeather() {
+  ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+  const cond = weather.condition;
+  if (cond === 'rain' || cond === 'drizzle' || cond === 'storm') {
+    ctx2d.strokeStyle = 'rgba(160,200,240,0.55)'; ctx2d.lineWidth = 1.5; ctx2d.lineCap = 'round';
+    for (const p of particles) {
+      ctx2d.beginPath(); ctx2d.moveTo(p.x, p.y); ctx2d.lineTo(p.x + p.angle * 20, p.y + p.len); ctx2d.stroke();
+      p.y += p.speed; p.x += p.angle * 2;
+      if (p.y > canvas.height + 20) { p.y = -20; p.x = Math.random() * canvas.width; }
+    }
+    if (cond === 'storm' && Math.random() < 0.004) { ctx2d.fillStyle = 'rgba(255,255,200,0.35)'; ctx2d.fillRect(0, 0, canvas.width, canvas.height); }
+  } else if (cond === 'snow') {
+    ctx2d.fillStyle = 'rgba(240,245,255,0.9)';
+    for (const p of particles) {
+      ctx2d.beginPath(); ctx2d.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx2d.fill();
+      p.y += p.speed; p.sway += p.swaySpd; p.x += Math.sin(p.sway) * 0.8;
+      if (p.y > canvas.height + 10) { p.y = -10; p.x = Math.random() * canvas.width; }
+    }
+  } else if (cond === 'clouds') {
+    ctx2d.fillStyle = 'rgba(200,210,220,0.06)';
+    for (let i = 0; i < 4; i++) {
+      const x = (Date.now() * 0.005 + i * 200) % (canvas.width + 300) - 150;
+      ctx2d.beginPath(); ctx2d.ellipse(x, 80 + i * 40, 160, 40, 0, 0, Math.PI * 2); ctx2d.fill();
+    }
+  } else if (cond === 'fog') { ctx2d.fillStyle = 'rgba(200,210,220,0.10)'; ctx2d.fillRect(0, 0, canvas.width, canvas.height); }
+  else if (cond === 'clear') {
+    const g = ctx2d.createRadialGradient(canvas.width * 0.85, 80, 0, canvas.width * 0.85, 80, 250);
+    g.addColorStop(0, 'rgba(255,220,140,0.18)'); g.addColorStop(1, 'rgba(255,220,140,0)');
+    ctx2d.fillStyle = g; ctx2d.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  weatherAnimId = requestAnimationFrame(animateWeather);
+}
+
+/* ============ AUDIO AMBIENTAL ============ */
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+const ctx = new AudioCtx();
+let ambientNodes = { rain: null, wind: null };
+function createNoiseBuffer(type) {
+  const size = 2 * 44100;
+  const buffer = ctx.createBuffer(1, size, 44100);
+  const data = buffer.getChannelData(0);
+  if (type === 'rain') {
+    for (let i = 0; i < size; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+  } else {
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    for (let i = 0; i < size; i++) {
+      const w = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + w * 0.0555179;
+      b1 = 0.99332 * b1 + w * 0.0750759;
+      b2 = 0.96900 * b2 + w * 0.1538520;
+      b3 = 0.86650 * b3 + w * 0.3104856;
+      b4 = 0.55000 * b4 + w * 0.5329522;
+      b5 = -0.7616 * b5 - w * 0.0168980;
+      data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
+      b6 = w * 0.115926;
+    }
+  }
+  return buffer;
+}
+async function startAmbient(type) {
+  if (ambientNodes[type]) return;
+  if (ctx.state === 'suspended') await ctx.resume();
+  const src = ctx.createBufferSource();
+  src.buffer = createNoiseBuffer(type);
+  src.loop = true;
+  const filter = ctx.createBiquadFilter();
+  if (type === 'rain') { filter.type = 'bandpass'; filter.frequency.value = 1400; filter.Q.value = 0.6; }
+  else { filter.type = 'lowpass'; filter.frequency.value = 600; filter.Q.value = 0.4; }
+  const gain = ctx.createGain();
+  gain.gain.value = 0;
+  src.connect(filter).connect(gain).connect(ctx.destination);
+  src.start();
+  const target = (state.ambientVol / 100) * 0.35;
+  gain.gain.linearRampToValueAtTime(target, ctx.currentTime + 1.5);
+  ambientNodes[type] = { src, gain };
+}
+function stopAmbient(type) {
+  if (!ambientNodes[type]) return;
+  const { src, gain } = ambientNodes[type];
+  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
+  setTimeout(() => { try { src.stop(); } catch {} }, 1200);
+  ambientNodes[type] = null;
+}
+function applyAmbient() {
+  if (state.soundRain) startAmbient('rain'); else stopAmbient('rain');
+  if (state.soundWind) startAmbient('wind'); else stopAmbient('wind');
+}
+function updateAmbientVolume() {
+  const target = (state.ambientVol / 100) * 0.35;
+  for (const k of ['rain', 'wind']) {
+    if (ambientNodes[k]) ambientNodes[k].gain.gain.linearRampToValueAtTime(target, ctx.currentTime + 0.3);
+  }
+}
+function autoAmbientByWeather() {
+  if (!state.soundAuto) return;
+  const cond = weather.condition;
+  const rainLike = cond === 'rain' || cond === 'storm' || cond === 'drizzle';
+  if (rainLike && !state.soundRain) { state.soundRain = true; $('soundRain').checked = true; startAmbient('rain'); }
+}
+
+/* ============ VISIBILIDAD ============ */
+function updateCharVisibility() {
+  const inSameRoom = herRoom === state.room;
+  document.body.classList.toggle('hidden-char', !inSameRoom);
+  if (!inSameRoom) {
+    awayNotice.classList.add('show');
+    setTimeout(() => awayNotice.classList.remove('show'), 2500);
+    return;
+  }
+  if (herActivity === 'sleeping') setPose('sleeping');
+  else if (herActivity === 'reading') setPose('lying');
+  else if (herActivity === 'eating') setPose('sitting');
+  else setPose('standing');
+}
+
+/* ============ PARPADEO ============ */
+setInterval(() => {
+  if (isSleeping) return;
+  document.body.classList.add('blink');
+  setTimeout(() => document.body.classList.remove('blink'), 110);
+}, 3500 + Math.random() * 2500);
+
+/* ============ VOCES ============ */
+let voicesEs = [], voicesJa = [], selectedEs = null, selectedJa = null;
+function scoreVoice(v) {
+  let s = 0; const n = (v.name + ' ' + (v.voiceURI || '')).toLowerCase();
+  if (n.includes('neural')) s += 20;
+  if (n.includes('natural')) s += 18;
+  if (n.includes('premium') || n.includes('enhanced')) s += 15;
+  if (n.includes('google')) s += 10;
+  if (n.includes('microsoft')) s += 8;
+  if (n.includes('siri')) s += 12;
+  return s;
+}
+function loadVoices() {
+  if (!('speechSynthesis' in window)) return;
+  const all = speechSynthesis.getVoices();
+  voicesEs = all.filter(v => v.lang?.toLowerCase().startsWith('es')).sort((a, b) => scoreVoice(b) - scoreVoice(a));
+  voicesJa = all.filter(v => v.lang?.toLowerCase().startsWith('ja')).sort((a, b) => scoreVoice(b) - scoreVoice(a));
+  selectedEs = state.voiceEs ? (voicesEs.find(v => v.name === state.voiceEs) || voicesEs[0]) : voicesEs[0];
+  selectedJa = state.voiceJa ? (voicesJa.find(v => v.name === state.voiceJa) || voicesJa[0]) : voicesJa[0];
+  buildVoiceList();
+}
+function buildVoiceList() {
+  const es = $('voiceEsList'), ja = $('voiceJaList');
+  es.innerHTML = ''; ja.innerHTML = '';
+  if (!voicesEs.length) es.innerHTML = '<div class="voice-item">No hay voces en español</div>';
+  else voicesEs.forEach(v => {
+    const el = document.createElement('div');
+    el.className = 'voice-item' + (v === selectedEs ? ' active' : '');
+    const tag = /neural|natural/i.test(v.name) ? 'NEURAL' : /enhanced|premium|siri/i.test(v.name) ? 'ENHANCED' : /google/i.test(v.name) ? 'GOOGLE' : '';
+    el.innerHTML = `<span>${v.name}</span>${tag ? `<span class="tag">${tag}</span>` : ''}`;
+    el.onclick = () => { selectedEs = v; state.voiceEs = v.name; saveGame(); buildVoiceList(); };
+    es.appendChild(el);
+  });
+  if (!voicesJa.length) ja.innerHTML = '<div class="voice-item">No hay voces en japonés</div>';
+  else voicesJa.forEach(v => {
+    const el = document.createElement('div');
+    el.className = 'voice-item' + (v === selectedJa ? ' active' : '');
+    const tag = /neural|natural/i.test(v.name) ? 'NEURAL' : /enhanced|premium/i.test(v.name) ? 'ENHANCED' : /google/i.test(v.name) ? 'GOOGLE' : '';
+    el.innerHTML = `<span>${v.name}</span>${tag ? `<span class="tag">${tag}</span>` : ''}`;
+    el.onclick = () => { selectedJa = v; state.voiceJa = v.name; saveGame(); buildVoiceList(); };
+    ja.appendChild(el);
+  });
+}
+if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+
+/* ============ FRASES ============ */
+const esLines = [
+  'Hola, ¿cómo estás?', 'Qué día tan tranquilo, ¿no?', 'Me gusta cuando estás cerca.',
+  '¿Qué estás mirando?', 'Tengo un poco de hambre...', 'Gracias por estar aquí.',
+  'Este lugar es acogedor.', 'A veces me quedo pensando.', 'Qué silencio tan bonito.',
+  'Me encanta tu voz.', '¿Nos quedamos un rato más?', 'Hoy me siento bien.',
+  'El jardín huele bien hoy.', 'El motor del Subaru suena raro...',
+];
+const jaLines = [
+  { ja: 'こんにちは。', es: 'Hola.' },
+  { ja: '今日はいい天気ですね。', es: 'Hoy hace buen día, ¿verdad?' },
+  { ja: 'ありがとう。', es: 'Gracias.' },
+  { ja: '綺麗だね。', es: 'Qué bonito.' },
+];
+const poems = [
+  { title: 'Haiku de Bashō', lines: ['Un viejo estanque.', 'Se zambulle una rana:', 'ruido de agua.'] },
+  { title: 'Rima · Bécquer', lines: ['Volverán las oscuras golondrinas', 'en tu balcón sus nidos a colgar,', 'y otra vez con el ala a sus cristales', 'jugando llamarán.'] },
+  { title: 'Haiku', lines: ['Sobre la rama seca', 'un cuervo se ha posado:', 'noche de otoño.'] },
+  { title: 'Caminante · Machado', lines: ['Caminante, son tus huellas', 'el camino y nada más;', 'caminante, no hay camino,', 'se hace camino al andar.'] },
+  { title: 'Haiku de Issa', lines: ['La nieve se derrite,', 'la aldea entera', 'llena de niños.'] },
+];
+
+function speak(text, lang, voice, opts = {}) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang === 'ja' ? 'ja-JP' : 'es-ES';
+  u.rate = opts.rate ?? (lang === 'ja' ? .95 : .92);
+  u.pitch = opts.pitch ?? (lang === 'ja' ? 1.15 : 1.02);
+  u.volume = opts.volume ?? 1;
+  if (voice) u.voice = voice;
+  const chew = setInterval(() => mouth.setAttribute('ry', 2 + Math.random() * 6), 110);
+  u.onend = () => { clearInterval(chew); mouth.setAttribute('ry', 2); };
+  u.onerror = u.onend;
+  const guess = Math.max(1200, text.length * (opts.rate ? 180 : 130));
+  setTimeout(() => { clearInterval(chew); mouth.setAttribute('ry', 2); }, guess + 800);
+  if (opts.blush !== false) blush(1800);
+  speechSynthesis.speak(u);
+}
+function speakEs() {
+  const t = esLines[Math.floor(Math.random() * esLines.length)];
+  say(t, 3200); speak(t, 'es', selectedEs);
+}
+function speakJa() {
+  const l = jaLines[Math.floor(Math.random() * jaLines.length)];
+  subtitle.querySelector('.ja').textContent = l.ja;
+  subtitle.querySelector('.es').textContent = l.es;
+  subtitle.classList.add('show');
+  clearTimeout(speakJa._t);
+  speakJa._t = setTimeout(() => subtitle.classList.remove('show'), 3800);
+  speak(l.ja, 'ja', selectedJa);
+}
+function speakCustom(text, ms = 3200, opts = {}) { say(text, ms); speak(text, 'es', selectedEs, opts); }
+
+/* ============ LECTURA ============ */
+let currentPoem = null;
+function startReading() {
+  clearReading();
+  herActivity = 'reading';
+  currentPoem = poems[Math.floor(Math.random() * poems.length)];
+  updateCharVisibility();
+  setTimeout(() => readNextLine(0), 500);
+}
+function readNextLine(index) {
+  if (herActivity !== 'reading' || !currentPoem) return;
+  if (index >= currentPoem.lines.length) {
+    readingTimers.push(setTimeout(() => {
+      if (herActivity === 'reading') {
+        currentPoem = poems[Math.floor(Math.random() * poems.length)];
+        readTitle.textContent = currentPoem.title;
+        readNextLine(0);
+      }
+    }, 4000));
+    return;
+  }
+  readTitle.textContent = currentPoem.title;
+  readLine.textContent = currentPoem.lines[index];
+  readingPanel.classList.add('show');
+  speak(currentPoem.lines[index], 'es', selectedEs, { rate: .78, pitch: .98, volume: .55, blush: false });
+  const waitMs = 1500 + currentPoem.lines[index].length * 90;
+  readingTimers.push(setTimeout(() => readNextLine(index + 1), waitMs));
+}
+function clearReading() { readingTimers.forEach(t => clearTimeout(t)); readingTimers = []; readingPanel.classList.remove('show'); }
+function stopReading() { clearReading(); if (herActivity === 'reading') herActivity = 'idle'; }
+
+/* ============ GRABAR VOZ ============ */
+async function record() {
+  if (recorder?.state === 'recording') { recorder.stop(); btnMic.classList.remove('rec'); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recorder = new MediaRecorder(stream);
+    chunks = [];
+    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      const buf = await new Blob(chunks, { type: 'audio/webm' }).arrayBuffer();
+      lastBuffer = await ctx.decodeAudioData(buf);
+      playVoice(pitch);
+      blush(1800); say('Interesante...', 1800);
+    };
+    recorder.start();
+    btnMic.classList.add('rec');
+    say('Te escucho...', 1200);
+  } catch { say('Necesito permiso del micrófono', 2500); }
+}
+function playVoice(rate) {
+  if (!lastBuffer) return;
+  if (ctx.state === 'suspended') ctx.resume();
+  const src = ctx.createBufferSource();
+  src.buffer = lastBuffer; src.playbackRate.value = rate;
+  const an = ctx.createAnalyser(); an.fftSize = 256;
+  src.connect(an).connect(ctx.destination); src.start();
+  const data = new Uint8Array(an.frequencyBinCount);
+  const dur = (lastBuffer.duration / rate) * 1000;
+  const start = performance.now();
+  (function loop() {
+    an.getByteTimeDomainData(data);
+    let s = 0; for (const v of data) s += Math.abs(v - 128);
+    const vol = Math.min(s / data.length / 16, 1);
+    mouth.setAttribute('ry', 2 + vol * 10);
+    if (performance.now() - start < dur) requestAnimationFrame(loop);
+    else mouth.setAttribute('ry', 2);
+  })();
+}
+btnMic.onclick = record;
+
+/* ============ TAP ============ */
+svg.addEventListener('click', (e) => {
+  userLastInteract = Date.now();
+  if (herActivity === 'sleeping') {
+    setPose('standing');
+    document.body.classList.remove('sleeping');
+    herActivity = 'idle'; isSleeping = false;
+    setMood('angry', 3000); blush(3000);
+    say('Mmm... estaba durmiendo... >_<', 2500);
+    affection = Math.max(0, affection - 2);
+    setBars(); saveGame();
+    setTimeout(checkNightMode, 20000);
+    return;
+  }
+  if (herActivity === 'reading') {
+    stopReading(); updateCharVisibility();
+    setMood('angry', 2500); blush(2800);
+    say('Estaba leyendo... ¿qué quieres? >:|', 2800);
+    affection = Math.max(0, affection - 2);
+    setBars(); saveGame();
+    return;
+  }
+  if (herActivity === 'eating') {
+    herActivity = 'idle'; setPose('standing');
+    setMood('angry', 3500); blush(3500);
+    say('¡Ey! Estaba comiendo... >:c', 2800);
+    affection = Math.max(0, affection - 3);
+    setBars(); saveGame();
+    return;
+  }
+  affection = Math.min(100, affection + 2);
+  setBars(); saveGame();
+  const lines = ['...', '¿Sí?', 'Hmm.', 'Te escucho.', '¿Qué miras?', 'No está mal.', 'Interesante.'];
+  say(lines[Math.floor(Math.random() * lines.length)]);
+  blush(900);
+  svg.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }, { transform: 'scale(1)' }], { duration: 300, easing: 'ease-out' });
+  if (affection >= 35) spawnHearts(e.clientX, e.clientY);
+  if (affection >= 90 && Math.random() < .3) spawnFX('💞', e.clientX, e.clientY - 30);
+});
+
+/* ============ COMIDA ============ */
+const foods = [
+  { icon: '🍓', label: 'Fresa', hunger: 5, aff: 3, line: 'Dulce.' },
+  { icon: '🍰', label: 'Pastel', hunger: 12, aff: 6, line: 'Mi favorito.' },
+  { icon: '🍜', label: 'Ramen', hunger: 22, aff: 5, line: 'Calientito.' },
+  { icon: '🍵', label: 'Té', hunger: 4, aff: 7, line: 'Relajante.' },
+  { icon: '🍷', label: 'Vino', hunger: 3, aff: 10, line: 'Elegante.' },
+  { icon: '🍣', label: 'Sushi', hunger: 16, aff: 6, line: 'Fresco.' },
+  { icon: '🍫', label: 'Chocolate', hunger: 8, aff: 9, line: 'Mmm...' },
+  { icon: '🍙', label: 'Onigiri', hunger: 14, aff: 6, line: 'Cómodo de comer.' },
+  { icon: '🍱', label: 'Bento', hunger: 24, aff: 8, line: 'Qué bien preparado.' },
+  { icon: '🍛', label: 'Curry', hunger: 20, aff: 7, line: 'Picante justo.' },
+  { icon: '🍡', label: 'Mochi', hunger: 6, aff: 8, line: 'Suavecito.' },
+  { icon: '🐟', label: 'Taiyaki', hunger: 10, aff: 9, line: 'Con forma de pez.' },
+];
+const foodItems = $('foodItems');
+foods.forEach(f => {
+  const el = document.createElement('div');
+  el.className = 'item';
+  el.innerHTML = `<div class="icon">${f.icon}</div><div class="label">${f.label}</div>`;
+  el.onclick = () => feed(f);
+  foodItems.appendChild(el);
+});
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function feed(f) {
+  closePanels();
+  userLastInteract = Date.now();
+  blush(2500);
+  foodFly.textContent = f.icon;
+  foodFly.style.left = '70%'; foodFly.style.top = '45%'; foodFly.style.transform = 'scale(1)';
+  foodFly.classList.add('show');
+  await wait(250);
+  foodFly.style.left = '50%'; foodFly.style.top = '38%'; foodFly.style.transform = 'scale(.55)';
+  await wait(400);
+  document.body.classList.add('eating');
+  await wait(180);
+  foodFly.classList.remove('show');
+  for (let i = 0; i < 8; i++) {
+    mouth.setAttribute('ry', i % 2 ? 8 : 3);
+    mouth.setAttribute('rx', i % 2 ? 10 : 7);
+    await wait(130);
+  }
+  mouth.setAttribute('ry', 2); mouth.setAttribute('rx', 9);
+  await wait(150);
+  document.body.classList.remove('eating');
+  food = Math.min(100, food + f.hunger);
+  affection = Math.min(100, affection + f.aff);
+  setBars(); saveGame();
+  say(f.line, 1800);
+}
+
+/* ============ VESTUARIO ============ */
+const outfitsList = [
+  { id: 'dress', icon: '👗', label: 'Vestido' },
+  { id: 'skirt', icon: '🩱', label: 'Blusa+Falda' },
+  { id: 'casual', icon: '👕', label: 'Casual' },
+  { id: 'kimono', icon: '👘', label: 'Kimono' },
+  { id: 'hoodie', icon: '🧥', label: 'Hoodie' },
+  { id: 'yukata', icon: '🎋', label: 'Yukata' },
+  { id: 'blazer', icon: '💼', label: 'Blazer' },
+  { id: 'pijama', icon: '🛌', label: 'Pijama' },
+  { id: 'base', icon: '🩲', label: 'Básico' },
+];
+const colorsList = [
+  { id: 'white', fill: '#FFFDF7', stroke: '#E8E2D5', label: 'Blanco' },
+  { id: 'black', fill: '#1a1a1a', stroke: '#333333', label: 'Negro' },
+  { id: 'wine', fill: '#8B2E3E', stroke: '#5a1a28', label: 'Vino' },
+  { id: 'blue', fill: '#2A5878', stroke: '#1a3a52', label: 'Azul' },
+  { id: 'green', fill: '#4A6B3A', stroke: '#2e4525', label: 'Verde' },
+  { id: 'violet', fill: '#6B4A8B', stroke: '#4a2e63', label: 'Violeta' },
+  { id: 'pink', fill: '#D67A9E', stroke: '#9c4a6b', label: 'Rosa' },
+  { id: 'cream', fill: '#F5E8D8', stroke: '#c9b89c', label: 'Crema' },
+  { id: 'red', fill: '#C0392B', stroke: '#7a1f16', label: 'Rojo' },
+];
+const shoesList = [
+  { id: 'flats', icon: '🖤', label: 'Sandalias' },
+  { id: 'none', icon: '🦶', label: 'Descalza' },
+];
+const outfitsItems = $('outfitsItems');
+outfitsList.forEach(o => {
+  const el = document.createElement('div');
+  el.className = 'item' + (o.id === state.outfit ? ' active' : '');
+  el.dataset.outfit = o.id;
+  el.innerHTML = `<div class="icon">${o.icon}</div><div class="label">${o.label}</div>`;
+  el.onclick = () => setOutfit(o.id);
+  outfitsItems.appendChild(el);
+});
+const colorsItems = $('colorsItems');
+colorsList.forEach(c => {
+  const el = document.createElement('div');
+  el.className = 'item' + (c.id === state.color ? ' active' : '');
+  el.dataset.color = c.id;
+  el.innerHTML = `<div class="swatch" style="background:${c.fill}"></div><div class="label">${c.label}</div>`;
+  el.onclick = () => setColor(c);
+  colorsItems.appendChild(el);
+});
+const shoesItems = $('shoesItems');
+shoesList.forEach(s => {
+  const el = document.createElement('div');
+  el.className = 'item' + (s.id === state.shoes ? ' active' : '');
+  el.dataset.shoes = s.id;
+  el.innerHTML = `<div class="icon">${s.icon}</div><div class="label">${s.label}</div>`;
+  el.onclick = () => setShoes(s.id);
+  shoesItems.appendChild(el);
+});
+function setOutfit(id) {
+  state.outfit = id;
+  document.querySelectorAll('.outfit').forEach(g => g.style.display = 'none');
+  if (id !== 'base') {
+    const g = document.getElementById('outfit-' + id);
+    if (g) g.style.display = '';
+  }
+  document.querySelectorAll('[data-outfit]').forEach(el => el.classList.toggle('active', el.dataset.outfit === id));
+  applyColor(state.color);
+  const lines = { dress: 'Este vestido me sienta bien.', skirt: 'Algo más corto, ¿te gusta?', casual: 'Cómodo para estar en casa.', kimono: 'Un kimono tradicional.', hoodie: 'Suave y cómodo.', yukata: 'Para el festival de verano.', blazer: 'Formal, ¿no?', pijama: 'Listo para dormir.', base: 'Solo lo básico, por ahora.' };
+  say(lines[id]); blush(1200); saveGame();
+}
+function applyColor(colorId) {
+  const c = colorsList.find(x => x.id === colorId) || colorsList[0];
+  ['dress-body', 'blouse', 'skirt', 'tshirt', 'shorts', 'kimono-body', 'hoodie-body', 'hoodie-hood', 'yukata-body', 'blazer-body', 'pijama-body'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.setAttribute('fill', c.fill); el.setAttribute('stroke', c.stroke); }
+  });
+}
+function setColor(c) {
+  state.color = c.id; applyColor(c.id);
+  document.querySelectorAll('[data-color]').forEach(el => el.classList.toggle('active', el.dataset.color === c.id));
+  say(`El ${c.label.toLowerCase()} me queda bien.`); saveGame();
+}
+function setShoes(id) {
+  state.shoes = id;
+  $('shoes-flats').style.display = id === 'flats' ? '' : 'none';
+  $('shoes-none').style.display = id === 'none' ? '' : 'none';
+  document.querySelectorAll('[data-shoes]').forEach(el => el.classList.toggle('active', el.dataset.shoes === id));
+  say(id === 'none' ? 'Descalza, se siente libre.' : 'Listas para salir.'); saveGame();
+}
+
+/* ============ CUARTOS ============ */
+const roomsItems = $('roomsItems');
+Object.entries(rooms).forEach(([id, r]) => {
+  const el = document.createElement('div');
+  el.className = 'item' + (id === state.room ? ' active' : '');
+  el.dataset.room = id;
+  el.innerHTML = `<div class="icon">${r.icon}</div><div class="label">${r.label}</div>`;
+  el.onclick = () => setRoom(id);
+  roomsItems.appendChild(el);
+});
+function setRoom(id) {
+  state.room = id;
+  applyScene();
+  document.querySelectorAll('#roomsItems .item').forEach(el => el.classList.toggle('active', el.dataset.room === id));
+  closePanels(); saveGame();
+  userLastInteract = Date.now();
+  updateCharVisibility();
+}
+
+/* ============ IA ============ */
+const allRoomKeys = Object.keys(rooms);
+const readingRooms = ['cuarto', 'biblioteca', 'jardin'];
+function wanderTick() {
+  if (isSleeping) { scheduleWander(); return; }
+  if (Date.now() - userLastInteract < 12000) { scheduleWander(); return; }
+  const roll = Math.random();
+  if (roll < 0.45) {
+    let n; do { n = allRoomKeys[Math.floor(Math.random() * allRoomKeys.length)]; } while (n === herRoom);
+    herRoom = n; herActivity = 'idle'; stopReading();
+  } else if (roll < 0.75 && readingRooms.includes(herRoom)) {
+    if (herActivity !== 'reading') startReading();
+  } else if (roll < 0.9) {
+    herRoom = readingRooms[Math.floor(Math.random() * readingRooms.length)];
+    herActivity = 'idle';
+    setTimeout(() => { if (herActivity === 'idle') startReading(); }, 1500);
+  } else { herActivity = 'idle'; stopReading(); }
+  updateCharVisibility();
+  scheduleWander();
+}
+function scheduleWander() { setTimeout(wanderTick, 20000 + Math.random() * 25000); }
+function scheduleEatingAlone() {
+  setTimeout(async () => {
+    if (isSleeping) { scheduleEatingAlone(); return; }
+    if (herRoom !== state.room || herActivity !== 'idle') { scheduleEatingAlone(); return; }
+    if (Date.now() - userLastInteract < 12000) { scheduleEatingAlone(); return; }
+    if (document.querySelector('.panel.open')) { scheduleEatingAlone(); return; }
+    herActivity = 'eating'; setPose('sitting'); blush(2000);
+    await wait(600);
+    for (let i = 0; i < 6; i++) {
+      mouth.setAttribute('ry', i % 2 ? 7 : 3);
+      mouth.setAttribute('rx', i % 2 ? 10 : 8);
+      await wait(160);
+    }
+    mouth.setAttribute('ry', 2); mouth.setAttribute('rx', 9);
+    scheduleEatingAlone();
+  }, 25000 + Math.random() * 20000);
+}
+
+/* ============ NOCHE ============ */
+function checkNightMode() {
+  const h = new Date().getHours();
+  const isNight = h >= 22 || h < 6;
+  if (isNight && !isSleeping) triggerSleepy();
+  else if (!isNight && isSleeping) wakeUp();
+}
+async function triggerSleepy() {
+  if (isSleeping) return;
+  isSleeping = true;
+  stopReading();
+  herActivity = 'yawning';
+  userLastInteract = Date.now();
+  document.body.classList.add('stretching', 'yawning');
+  await wait(800);
+  mouth.setAttribute('ry', 16); mouth.setAttribute('rx', 13);
+  const texts = ['Uaaah... ya tengo sueño...', 'Mmm... qué sueño tengo...', 'Uff... es hora de dormir...'];
+  const yt = texts[Math.floor(Math.random() * texts.length)];
+  say(yt, 3500); speak(yt, 'es', selectedEs, { rate: .75, pitch: .9 });
+  await wait(2500);
+  mouth.setAttribute('ry', 12); mouth.setAttribute('rx', 11);
+  await wait(500);
+  document.body.classList.remove('stretching', 'yawning');
+  mouth.setAttribute('ry', 2); mouth.setAttribute('rx', 9);
+  await wait(400);
+  say('Me voy a dormir...', 2000);
+  document.body.classList.add('hidden-char');
+  await wait(1000);
+  herRoom = 'cuarto'; herActivity = 'sleeping';
+  if (state.room !== 'cuarto') {
+    awayNotice.textContent = 'Se fue a dormir a su cuarto 💤';
+    awayNotice.classList.add('show');
+    setTimeout(() => { awayNotice.classList.remove('show'); awayNotice.textContent = 'No está aquí ahora mismo...'; }, 3500);
+  } else {
+    updateCharVisibility();
+    setPose('sleeping');
+    mouth.setAttribute('ry', 3); mouth.setAttribute('rx', 6);
+    blush(2500);
+  }
+  saveGame(true);
+}
+function wakeUp() {
+  isSleeping = false;
+  document.body.classList.remove('sleeping', 'yawning', 'stretching');
+  herActivity = 'idle';
+  setPose('standing');
+  mouth.setAttribute('ry', 2); mouth.setAttribute('rx', 9);
+  if (state.room === herRoom) { say('Buenos días...', 2000); speak('Buenos días', 'es', selectedEs); }
+}
+setInterval(checkNightMode, 60000);
+
+/* ============ GARAJE ============ */
+let carPartsDone = state.carParts || [];
+function initCarGame() {
+  carPartsDone = state.carParts || [];
+  updateCarUI();
+  document.querySelectorAll('.hotspot').forEach(h => {
+    if (carPartsDone.includes(h.dataset.part)) h.classList.add('done');
+    h.onclick = () => {
+      const part = h.dataset.part;
+      if (carPartsDone.includes(part)) return;
+      carPartsDone.push(part);
+      state.carParts = carPartsDone;
+      h.classList.add('done');
+      updateCarUI(); saveGame();
+      const msgs = { motor: '¡Motor listo!', aceite: 'Aceite cambiado.', bateria: '¡Batería cargada!', freno: 'Frenos ajustados.', rueda: 'Rueda apretada.', escape: 'Escape sellado.' };
+      $('carStatus').textContent = msgs[part] || '¡Listo!';
+      if (carPartsDone.length === 6) {
+        state.carRepaired = true; saveGame(true);
+        $('carStatus').textContent = '¡El Subaru arranca! 🔊 Vrum vrum...';
+        speak('¡El Subaru ya arranca! Vrum vrum', 'es', selectedEs);
+        $('gameCar').animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(3px)' }, { transform: 'translateX(0)' }], { duration: 200, iterations: 10 });
+      }
+    };
+  });
+}
+function updateCarUI() {
+  $('carProgress').style.width = (carPartsDone.length / 6) * 100 + '%';
+  if (carPartsDone.length < 6) $('carStatus').textContent = `Reparado ${carPartsDone.length}/6`;
+}
+$('btnGarage').onclick = () => {
+  if (herRoom === state.room) { stopReading(); herActivity = 'idle'; updateCharVisibility(); }
+  $('garageGame').classList.add('open');
+  initCarGame(); closePanels();
+};
+$('closeGarage').onclick = () => $('garageGame').classList.remove('open');
+
+/* ============ PANELES ============ */
+function closePanels() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('open')); }
+function togglePanel(id) {
+  const p = $(id); const wasOpen = p.classList.contains('open');
+  closePanels(); if (!wasOpen) p.classList.add('open');
+}
+$('btnFood').onclick = () => togglePanel('foodPanel');
+$('btnWardrobe').onclick = () => togglePanel('wardrobePanel');
+$('btnRooms').onclick = () => togglePanel('roomsPanel');
+$('btnSettings').onclick = () => togglePanel('settingsPanel');
+$('btnWeather').onclick = () => { fetchWeather(); say('Actualizando clima...', 1500); };
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = closePanels);
+
+document.querySelectorAll('.tabs button[data-tab]').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tabs button[data-tab]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const t = btn.dataset.tab;
+    $('outfitsItems').hidden = t !== 'outfits';
+    $('colorsItems').hidden = t !== 'colors';
+    $('shoesItems').hidden = t !== 'shoes';
+  };
+});
+document.querySelectorAll('.tabs button[data-stab]').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tabs button[data-stab]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const t = btn.dataset.stab;
+    $('accountBox').style.display = t === 'account' ? '' : 'none';
+    $('nameBox').style.display = t === 'name' ? '' : 'none';
+    $('voiceBox').style.display = t === 'voice' ? '' : 'none';
+    $('soundBox').style.display = t === 'sound' ? '' : 'none';
+    $('weatherBox').style.display = t === 'weather' ? '' : 'none';
+  };
+});
+document.querySelectorAll('.tabs button[data-vtab]').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tabs button[data-vtab]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const t = btn.dataset.vtab;
+    $('voiceEsList').style.display = t === 'es' ? '' : 'none';
+    $('voiceJaList').style.display = t === 'ja' ? '' : 'none';
+  };
+});
+$('saveNameBtn').onclick = () => {
+  const n = $('nameInput').value.trim();
+  if (!n) return;
+  state.charName = n;
+  $('charNameLabel').textContent = n.toUpperCase();
+  saveGame(true);
+  speakCustom(`Ahora me llamo ${n}. Me gusta.`, 3000);
+  closePanels();
+};
+$('refetchWeatherBtn').onclick = fetchWeather;
+$('weatherFX').onchange = e => { state.weatherFX = e.target.checked; saveGame(); startWeatherCanvas(); };
+$('weatherOutfit').onchange = e => { state.weatherOutfit = e.target.checked; saveGame(); };
+$('soundRain').onchange = async e => { state.soundRain = e.target.checked; saveGame(); if (e.target.checked) await startAmbient('rain'); else stopAmbient('rain'); };
+$('soundWind').onchange = async e => { state.soundWind = e.target.checked; saveGame(); if (e.target.checked) await startAmbient('wind'); else stopAmbient('wind'); };
+$('soundAuto').onchange = e => { state.soundAuto = e.target.checked; saveGame(); if (e.target.checked) autoAmbientByWeather(); };
+$('ambientVol').oninput = e => { state.ambientVol = +e.target.value; updateAmbientVolume(); };
+$('ambientVol').onchange = () => saveGame();
+$('btnSpeak').onclick = speakEs;
+$('btnSpeak').oncontextmenu = e => { e.preventDefault(); speakJa(); };
+$('btnReset').onclick = () => {
+  if (confirm('¿Borrar todo el progreso local? (la nube no se borra)')) {
+    localStorage.removeItem(STORAGE_KEY); location.reload();
+  }
+};
+
+/* ============ FIREBASE AUTH ============ */
+$('btnGoogle').onclick = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    console.error(e);
+    say('Error al iniciar sesión. Verifica el dominio autorizado.', 3000);
+  }
+};
+$('btnLogout').onclick = () => signOut(auth);
+$('btnSyncNow').onclick = async () => {
+  if (!currentUser) return;
+  await saveCloud(currentUser.uid);
+  say('☁️ Sincronizado.', 1800);
+};
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  if (user) {
+    $('loginPrompt').style.display = 'none';
+    $('userInfo').style.display = 'block';
+    $('userName').textContent = user.displayName || 'Usuario';
+    $('userEmail').textContent = user.email || '';
+    $('userPhoto').src = user.photoURL || '';
+    $('userAvatar').src = user.photoURL || '';
+    $('userAvatar').style.display = user.photoURL ? '' : 'none';
+    await loadCloud(user.uid);
+  } else {
+    $('loginPrompt').style.display = 'block';
+    $('userInfo').style.display = 'none';
+    $('userAvatar').style.display = 'none';
+  }
+});
+
+/* ============ IDLE HABLAR ============ */
+function scheduleIdleSpeak() {
+  setTimeout(() => {
+    if (!document.querySelector('.panel.open') && !btnMic.classList.contains('rec') && herActivity === 'idle' && !isSleeping) {
+      if (Math.random() < .85) speakEs(); else speakJa();
+    }
+    scheduleIdleSpeak();
+  }, 25000 + Math.random() * 20000);
+}
+scheduleIdleSpeak();
+
+/* ============ DECAIMIENTO ============ */
+setInterval(() => {
+  food = Math.max(0, food - 1);
+  affection = Math.max(0, affection - .5);
+  setBars();
+  if (food < 15) say('Tengo hambre...', 2000);
+  else if (affection < 20) say('Hace tiempo que no hablamos...', 2000);
+}, 15000);
+
+/* ============ AUTOGUARDAR ============ */
+setInterval(() => saveGame(true), 30000);
+window.addEventListener('beforeunload', () => saveGame(true));
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(true); });
+
+/* ============ PWA / SERVICE WORKER ============ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(err => console.warn('SW no registrado', err));
+  });
+}
+
+/* ============ INICIO ============ */
+(function init() {
+  loadGame();
+  setBars();
+  applyScene();
+  applyAllState();
+  herRoom = state.room;
+  setPose('standing');
+  initCarGame();
+  fetchWeather();
+  setTimeout(() => { if (!weatherCoords) applyWeatherDefault(); }, 9000);
+  setTimeout(() => {
+    const h = new Date().getHours();
+    let greeting = 'Hola, ¿cómo estuvo tu día?';
+    if (h >= 22 || h < 6) greeting = 'Hola... qué tarde, ¿no?';
+    else if (h >= 5 && h < 12) greeting = 'Buenos días, ¿cómo amaneciste?';
+    else if (h >= 12 && h < 19) greeting = 'Hola, ¿cómo estuvo tu día?';
+    else greeting = 'Buenas tardes, ¿cómo estuvo todo?';
+    say(greeting, 4000); speak(greeting, 'es', selectedEs); blush(2000);
+  }, 800);
+  scheduleWander();
+  scheduleEatingAlone();
+  setTimeout(checkNightMode, 3000);
+})();
+</script>
+</body>
+</html>

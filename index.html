@@ -26,7 +26,6 @@
   #scene { position: absolute; inset: 0; background: linear-gradient(to bottom, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bot) 100%); transition: background 1.2s ease; z-index: 0; }
   #scene::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 55%, var(--light), transparent 60%); transition: background 1.2s ease; pointer-events: none; }
 
-  /* ====== PARED + SUELO POR CUARTO ====== */
   #roomBack { position: absolute; inset: 0; overflow: hidden; z-index: 1; pointer-events: none; }
   #roomWall {
     position: absolute; inset: 0 0 38% 0;
@@ -128,7 +127,7 @@
   #readingPanel .title { font-size: 10px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; font-family: system-ui, sans-serif; }
   #readingPanel .line { font-size: 13px; line-height: 1.5; font-style: italic; }
 
-  #zzz { position: absolute; top: 22%; left: 58%; font-family: system-ui, sans-serif; font-size: 22px; color: var(--accent); opacity: 0; pointer-events: none; z-index: 7; transition: opacity .3s; }
+  #zzz { position: absolute; top: 30%; left: 20%; font-family: system-ui, sans-serif; font-size: 22px; color: var(--accent); opacity: 0; pointer-events: none; z-index: 7; transition: opacity .3s; }
   body.sleeping #zzz { opacity: 1; animation: zzzFloat 3s infinite; }
   @keyframes zzzFloat { 0% { transform: translate(0,0) scale(.8); opacity: 0; } 30% { opacity: 1; } 100% { transform: translate(30px,-60px) scale(1.2); opacity: 0; } }
 
@@ -449,18 +448,17 @@
     <svg viewBox="0 0 400 620" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="blanketGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#8a6a9a"/>
-          <stop offset="55%" stop-color="#6a4a7a"/>
+          <stop offset="0%" stop-color="#a888b8"/>
+          <stop offset="50%" stop-color="#7a5a8a"/>
           <stop offset="100%" stop-color="#4a2e5a"/>
         </linearGradient>
       </defs>
-      <path d="M70 380 Q120 360 200 358 Q280 360 330 380 L345 620 L55 620 Z"
+      <path d="M110 355 Q250 338 385 358 L385 438 Q250 455 95 438 Z"
             fill="url(#blanketGrad)" stroke="#3a2a4a" stroke-width="2.5"/>
-      <path d="M90 420 Q200 405 310 420" stroke="#4a2e5a" stroke-width="2" fill="none" opacity=".55"/>
-      <path d="M82 465 Q200 450 318 465" stroke="#4a2e5a" stroke-width="2" fill="none" opacity=".5"/>
-      <path d="M76 515 Q200 500 324 515" stroke="#4a2e5a" stroke-width="2" fill="none" opacity=".45"/>
-      <path d="M72 565 Q200 550 328 565" stroke="#4a2e5a" stroke-width="2" fill="none" opacity=".4"/>
-      <path d="M70 380 Q200 362 330 380" stroke="#a88aba" stroke-width="3" fill="none" opacity=".7"/>
+      <path d="M130 378 Q250 365 375 375" stroke="#5a3a6a" stroke-width="2" fill="none" opacity=".55"/>
+      <path d="M118 405 Q250 392 380 402" stroke="#5a3a6a" stroke-width="2" fill="none" opacity=".5"/>
+      <path d="M112 428 Q250 418 382 426" stroke="#5a3a6a" stroke-width="2" fill="none" opacity=".45"/>
+      <path d="M110 355 Q250 338 385 358" stroke="#c8a8d8" stroke-width="3" fill="none" opacity=".8"/>
     </svg>
   </div>
 </main>
@@ -663,7 +661,7 @@ let readingTimers = [];
 let currentUser = null;
 
 /* ============ GUARDAR ============ */
-const STORAGE_KEY = 'akane_save_v7';
+const STORAGE_KEY = 'akane_save_v8';
 let saveTimeout, cloudSaveTimeout;
 function saveGame(immediate = false) {
   try {
@@ -818,11 +816,10 @@ function setPose(pose) {
 
   const cover = document.getElementById('sleepCover');
   if (cover) cover.classList.toggle('show', sleeping);
-  const innerBlanket = document.getElementById('sleepBlanket');
-  if (innerBlanket) innerBlanket.style.display = 'none';
 
   if (sleeping) {
-    bodyInner.setAttribute('transform', 'translate(-80, 180)');
+    // 🎯 Rotar 90° y acostar sobre la cama
+    bodyInner.setAttribute('transform', 'matrix(0 -0.85 0.85 0 -75 520)');
   } else if (lying) {
     bodyInner.setAttribute('transform', 'translate(-20, 90) rotate(-78 200 380)');
   } else if (sitting) {

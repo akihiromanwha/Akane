@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -66,7 +65,11 @@
   #weatherCanvas { position: absolute; inset: 0; pointer-events: none; z-index: 4; opacity: .85; transition: opacity 1s; }
   #weatherCanvas.hidden { opacity: 0; }
 
-  header { position: relative; z-index: 5; display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid rgba(232,160,75,.15); backdrop-filter: blur(8px); background: rgba(0,0,0,.15); gap: 8px; }
+  #sleepCover { position: absolute; inset: 0; pointer-events: none; z-index: 6; display: none; }
+  #sleepCover.show { display: block; }
+  #sleepCover svg { width: 100%; height: 100%; }
+
+  header { position: relative; z-index: 10; display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid rgba(232,160,75,.15); backdrop-filter: blur(8px); background: rgba(0,0,0,.15); gap: 8px; }
   header .name { font-size: 15px; letter-spacing: 3px; color: var(--accent); font-style: italic; }
   header .level { font-size: 9px; font-family: system-ui, sans-serif; letter-spacing: 1px; color: #f0b8c8; opacity: .9; margin-top: 2px; }
   header .where { font-size: 9px; font-family: system-ui, sans-serif; opacity: .65; letter-spacing: 1px; }
@@ -83,8 +86,8 @@
   #weatherBadge { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--accent); }
   #userAvatar { width: 22px; height: 22px; border-radius: 50%; display: none; border: 1px solid var(--accent); }
 
-  #stage { flex: 1; position: relative; z-index: 3; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  #akane { width: min(76vw, 340px); height: auto; cursor: pointer; filter: drop-shadow(0 20px 40px rgba(0,0,0,.55)); transition: transform .9s ease, opacity .5s ease; position: relative; z-index: 5; }
+  #stage { flex: 1; position: relative; z-index: 5; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  #akane { width: min(70vw, 320px); height: auto; cursor: pointer; filter: drop-shadow(0 20px 40px rgba(0,0,0,.55)); transition: transform .9s ease, opacity .5s ease; position: relative; z-index: 5; }
   #body-group { animation: float 4s ease-in-out infinite; transform-origin: 200px 480px; }
   @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
   body.sitting #body-group, body.lying #body-group, body.sleeping #body-group, body.yawning #body-group, body.stretching #body-group { animation: none; }
@@ -101,7 +104,7 @@
   #subtitle .ja { font-size: 12px; color: var(--accent); letter-spacing: 1px; }
   #subtitle .es { font-size: 13px; margin-top: 2px; font-style: italic; }
 
-  #fxLayer { position: absolute; inset: 0; pointer-events: none; z-index: 6; overflow: hidden; }
+  #fxLayer { position: absolute; inset: 0; pointer-events: none; z-index: 7; overflow: hidden; }
   .heart-fx { position: absolute; font-size: 22px; will-change: transform, opacity; animation: heartUp 1.5s ease-out forwards; text-shadow: 0 2px 8px rgba(0,0,0,.4); }
   @keyframes heartUp {
     0%   { opacity: 0; transform: translate(-50%, 0) scale(.4) rotate(0deg); }
@@ -129,7 +132,7 @@
   body.sleeping #zzz { opacity: 1; animation: zzzFloat 3s infinite; }
   @keyframes zzzFloat { 0% { transform: translate(0,0) scale(.8); opacity: 0; } 30% { opacity: 1; } 100% { transform: translate(30px,-60px) scale(1.2); opacity: 0; } }
 
-  footer { position: relative; z-index: 5; padding: 8px 12px 18px; border-top: 1px solid rgba(232,160,75,.15); background: linear-gradient(to top, rgba(0,0,0,.55), transparent); }
+  footer { position: relative; z-index: 10; padding: 8px 12px 18px; border-top: 1px solid rgba(232,160,75,.15); background: linear-gradient(to top, rgba(0,0,0,.55), transparent); }
   .actions { display: flex; justify-content: center; gap: 5px; flex-wrap: wrap; }
   .actions button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(232,160,75,.3); background: rgba(40,28,20,.9); color: var(--accent); font-size: 17px; cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; }
   .actions button:active { transform: scale(.92); }
@@ -178,16 +181,13 @@
   .eye { transform-box: fill-box; transform-origin: center; transition: transform .08s; }
   body.sleeping .eye, body.yawning .eye, body.stretching .eye { display: none; }
   body.sleeping #eyesClosed, body.yawning #eyesClosed, body.stretching #eyesClosed { display: block !important; }
-  .cheek { transform-box: fill-box; transform-origin: center; transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
-  body.eating .cheek { transform: scale(2.2); }
-  body.angry .cheek { transform: scale(2.8); }
-  body.yawning .cheek { transform: scale(1.4); }
-  #blushL, #blushR { transition: opacity .4s ease; }
-  body.blush #blushL, body.blush #blushR { opacity: .95; }
-  #eyebrowL, #eyebrowR { transition: all .25s ease; }
+  body.eating .cheek { transform: scale(2.2); transform-box: fill-box; transform-origin: center; transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
   body.angry #eyebrowL { transform: rotate(22deg) translate(2px, 4px); transform-origin: 168px 170px; }
   body.angry #eyebrowR { transform: rotate(-22deg) translate(-2px, 4px); transform-origin: 232px 170px; }
   body.yawning #eyebrowL, body.yawning #eyebrowR { transform: translateY(-4px); }
+  #eyebrowL, #eyebrowR { transition: all .25s ease; }
+  #blushL, #blushR { transition: opacity .4s ease; }
+  body.blush #blushL, body.blush #blushR { opacity: .95; }
 
   #garageGame { position: absolute; inset: 0; background: rgba(8,5,3,.94); z-index: 30; display: none; flex-direction: column; padding: 20px; font-family: system-ui, sans-serif; }
   #garageGame.open { display: flex; }
@@ -441,17 +441,28 @@
           <rect x="199" y="332" width="4" height="42" fill="#f5e8d8"/>
         </g>
 
-        <g id="sleepBlanket" style="display:none">
-          <path d="M40 470 Q30 490 34 560 Q38 600 70 610 Q200 630 330 610 Q362 600 366 560 Q370 490 360 470 Q200 450 40 470 Z"
-                fill="#6a4a7a" stroke="#3a2a4a" stroke-width="2"/>
-          <path d="M60 510 Q140 500 200 505 Q260 510 340 500" stroke="#5a3a6a" stroke-width="2.5" fill="none" opacity=".55"/>
-          <path d="M56 560 Q140 550 200 555 Q260 560 344 550" stroke="#5a3a6a" stroke-width="2.5" fill="none" opacity=".45"/>
-          <path d="M40 470 Q200 462 360 470" stroke="#8a6a9a" stroke-width="3" fill="none" opacity=".6"/>
-        </g>
-
       </g>
     </g>
   </svg>
+
+  <div id="sleepCover">
+    <svg viewBox="0 0 400 620" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="blanketGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#8a6a9a"/>
+          <stop offset="55%" stop-color="#6a4a7a"/>
+          <stop offset="100%" stop-color="#4a2e5a"/>
+        </linearGradient>
+      </defs>
+      <path d="M70 380 Q120 360 200 358 Q280 360 330 380 L345 620 L55 620 Z"
+            fill="url(#blanketGrad)" stroke="#3a2a4a" stroke-width="2.5"/>
+      <path d="M90 420 Q200 405 310 420" stroke="#4a2e5a" stroke-width="2" fill="none" opacity=".55"/>
+      <path d="M82 465 Q200 450 318 465" stroke="#4a2e5a" stroke-width="2" fill="none" opacity=".5"/>
+      <path d="M76 515 Q200 500 324 515" stroke="#4a2e5a" stroke-width="2" fill="none" opacity=".45"/>
+      <path d="M72 565 Q200 550 328 565" stroke="#4a2e5a" stroke-width="2" fill="none" opacity=".4"/>
+      <path d="M70 380 Q200 362 330 380" stroke="#a88aba" stroke-width="3" fill="none" opacity=".7"/>
+    </svg>
+  </div>
 </main>
 
 <div id="garageGame">
@@ -652,7 +663,7 @@ let readingTimers = [];
 let currentUser = null;
 
 /* ============ GUARDAR ============ */
-const STORAGE_KEY = 'akane_save_v6';
+const STORAGE_KEY = 'akane_save_v7';
 let saveTimeout, cloudSaveTimeout;
 function saveGame(immediate = false) {
   try {
@@ -798,14 +809,20 @@ function setPose(pose) {
   document.body.classList.toggle('sitting', sitting);
   document.body.classList.toggle('lying', lying);
   document.body.classList.toggle('sleeping', sleeping);
+
   $('legs-standing').style.display = (sitting || lying || sleeping) ? 'none' : '';
   $('legs-sitting').style.display  = (sitting || lying) ? '' : 'none';
   $('arms-standing').style.display = (sitting || lying || sleeping) ? 'none' : '';
   $('arms-sitting').style.display  = (sitting || lying) ? '' : 'none';
   bookProp.style.display = (pose === 'lying') ? '' : 'none';
-  $('sleepBlanket').style.display = sleeping ? '' : 'none';
+
+  const cover = document.getElementById('sleepCover');
+  if (cover) cover.classList.toggle('show', sleeping);
+  const innerBlanket = document.getElementById('sleepBlanket');
+  if (innerBlanket) innerBlanket.style.display = 'none';
+
   if (sleeping) {
-    bodyInner.setAttribute('transform', 'translate(20, 235) rotate(-4 200 380)');
+    bodyInner.setAttribute('transform', 'translate(-80, 180)');
   } else if (lying) {
     bodyInner.setAttribute('transform', 'translate(-20, 90) rotate(-78 200 380)');
   } else if (sitting) {
@@ -813,9 +830,9 @@ function setPose(pose) {
   } else {
     bodyInner.setAttribute('transform', '');
   }
+
   const a = $('akane');
-  if (sleeping) a.style.transform = 'translate(-22%, 12%) scale(1.05)';
-  else a.style.transform = '';
+  if (a) a.style.transform = '';
 }
 
 /* ============ HORA + CUARTO ============ */
@@ -846,36 +863,35 @@ const timeTints = {
 /* ============ MUEBLES ============ */
 const FURNITURE = {
   cuarto: (slot) => `
-    <rect x="60" y="60" width="150" height="130" rx="6" fill="#1a1020" stroke="#3a2a3a" stroke-width="5"/>
-    <rect x="66" y="66" width="138" height="118" fill="${slot === 'noche' ? '#1a2040' : slot === 'atardecer' ? '#c95a3a' : '#a8d8e8'}"/>
-    ${slot === 'noche' ? '<circle cx="180" cy="95" r="10" fill="#f5e8a0"/><circle cx="100" cy="120" r="1.2" fill="#fff"/><circle cx="130" cy="90" r="1" fill="#fff"/><circle cx="90" cy="140" r="1.4" fill="#fff"/><circle cx="150" cy="150" r="1" fill="#fff"/>' : ''}
-    <line x1="135" y1="66" x2="135" y2="184" stroke="#3a2a3a" stroke-width="4"/>
-    <line x1="66" y1="125" x2="204" y2="125" stroke="#3a2a3a" stroke-width="4"/>
-    <path d="M50 55 Q68 60 66 190 Q60 200 50 195 Z" fill="#6a3a52" opacity=".85"/>
-    <path d="M220 55 Q202 60 204 190 Q210 200 220 195 Z" fill="#6a3a52" opacity=".85"/>
-    <g>
-      <rect x="30" y="430" width="60" height="180" rx="8" fill="#5a3a1a" stroke="#2a1a08" stroke-width="2"/>
-      <rect x="34" y="434" width="52" height="172" rx="6" fill="#7a4a28"/>
-      <path d="M80 460 Q300 452 380 470 L380 600 Q300 620 80 610 Z" fill="#E8DCC8" stroke="#A89880" stroke-width="2"/>
-      <ellipse cx="120" cy="485" rx="55" ry="28" fill="#FBF2E0" stroke="#C8B8A0" stroke-width="1.5"/>
-      <ellipse cx="120" cy="482" rx="42" ry="20" fill="#FFF8E8" opacity=".7"/>
-      <path d="M170 470 Q320 462 380 480 L380 610 Q300 630 170 620 Q150 550 170 470 Z" fill="#7a5a8a" stroke="#4a3050" stroke-width="2"/>
-      <path d="M190 500 Q270 495 360 505" stroke="#5a3a6a" stroke-width="2" fill="none" opacity=".5"/>
-    </g>
-    <g>
-      <rect x="290" y="460" width="90" height="130" rx="6" fill="#6a3a1a" stroke="#2a1a08" stroke-width="2"/>
-      <rect x="295" y="465" width="80" height="40" rx="3" fill="#4a2810"/>
-      <rect x="295" y="510" width="80" height="40" rx="3" fill="#4a2810"/>
-      <circle cx="335" cy="485" r="3" fill="#D4A843"/>
-      <circle cx="335" cy="530" r="3" fill="#D4A843"/>
-      <ellipse cx="335" cy="450" rx="32" ry="8" fill="#3a2010"/>
-      <path d="M320 450 Q320 415 335 405 Q350 415 350 450 Z" fill="#F5E8A0" opacity=".95"/>
-      <circle cx="335" cy="425" r="14" fill="#FFF8C0" opacity=".6"/>
-    </g>
-    <rect x="240" y="80" width="70" height="90" rx="3" fill="#2a1a10" stroke="#8a6a3a" stroke-width="2"/>
-    <rect x="245" y="85" width="60" height="80" fill="#a8c8e0"/>
-    <circle cx="275" cy="115" r="14" fill="#f5e8a0"/>
-    <path d="M245 145 L265 120 L285 140 L300 125 L305 165 L245 165 Z" fill="#4a7a3a"/>
+    <rect x="40" y="50" width="150" height="130" rx="6" fill="#1a1020" stroke="#3a2a3a" stroke-width="5"/>
+    <rect x="46" y="56" width="138" height="118" fill="${slot === 'noche' ? '#1a2040' : slot === 'atardecer' ? '#c95a3a' : '#a8d8e8'}"/>
+    ${slot === 'noche'
+      ? '<circle cx="170" cy="90" r="10" fill="#f5e8a0"/><circle cx="80" cy="110" r="1.2" fill="#fff"/><circle cx="110" cy="80" r="1" fill="#fff"/><circle cx="70" cy="130" r="1.4" fill="#fff"/><circle cx="150" cy="150" r="1" fill="#fff"/>'
+      : '<circle cx="170" cy="90" r="14" fill="#FFF2A0" opacity=".9"/>'}
+    <line x1="115" y1="56" x2="115" y2="174" stroke="#3a2a3a" stroke-width="4"/>
+    <line x1="46" y1="115" x2="184" y2="115" stroke="#3a2a3a" stroke-width="4"/>
+    <path d="M30 45 Q48 50 46 180 Q40 190 30 185 Z" fill="#6a3a52" opacity=".85"/>
+    <path d="M200 45 Q182 50 184 180 Q190 190 200 185 Z" fill="#6a3a52" opacity=".85"/>
+    <rect x="260" y="70" width="90" height="120" rx="3" fill="#2a1a10" stroke="#8a6a3a" stroke-width="2"/>
+    <rect x="265" y="75" width="80" height="110" fill="#a8c8e0"/>
+    <circle cx="305" cy="115" r="18" fill="#f5e8a0"/>
+    <path d="M265 155 L290 125 L315 150 L335 130 L345 175 L265 175 Z" fill="#4a7a3a"/>
+    <rect x="8" y="340" width="20" height="240" rx="6" fill="#4a2a10" stroke="#1a0e04" stroke-width="2.5"/>
+    <rect x="24" y="355" width="362" height="225" rx="12" fill="#4a2a10" stroke="#1a0e04" stroke-width="3"/>
+    <rect x="32" y="362" width="348" height="210" rx="8" fill="#7a4a28"/>
+    <rect x="32" y="362" width="348" height="210" rx="8" fill="#d8c8a8" opacity=".55"/>
+    <ellipse cx="205" cy="590" rx="180" ry="18" fill="#000" opacity=".35"/>
+    <ellipse cx="95" cy="398" rx="60" ry="30" fill="#FFF8E8" stroke="#c9b89c" stroke-width="1.5"/>
+    <ellipse cx="90" cy="392" rx="50" ry="22" fill="#FFFEFA" opacity=".8"/>
+    <path d="M55 395 Q90 388 130 395" stroke="#e0d0b8" stroke-width="1.5" fill="none" opacity=".7"/>
+    <rect x="330" y="430" width="58" height="145" rx="4" fill="#5a3a1a" stroke="#2a1a08" stroke-width="2"/>
+    <rect x="335" y="435" width="48" height="35" rx="2" fill="#4a2810"/>
+    <rect x="335" y="475" width="48" height="35" rx="2" fill="#4a2810"/>
+    <circle cx="359" cy="452" r="2.5" fill="#D4A843"/>
+    <circle cx="359" cy="492" r="2.5" fill="#D4A843"/>
+    <ellipse cx="359" cy="428" rx="22" ry="6" fill="#3a2010"/>
+    <path d="M349 428 Q349 405 359 398 Q369 405 369 428 Z" fill="#F5E8A0" opacity=".95"/>
+    <circle cx="359" cy="412" r="9" fill="#FFF8C0" opacity=".6"/>
   `,
   cocina: () => `
     <rect x="40" y="80" width="320" height="110" rx="4" fill="#6a4a2a" stroke="#2a1a08" stroke-width="2"/>

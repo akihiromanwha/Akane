@@ -453,12 +453,12 @@
           <stop offset="100%" stop-color="#4a2e5a"/>
         </linearGradient>
       </defs>
-      <path d="M110 355 Q250 338 385 358 L385 438 Q250 455 95 438 Z"
+      <path d="M185 348 Q290 335 388 355 L388 448 Q290 462 180 448 Z"
             fill="url(#blanketGrad)" stroke="#3a2a4a" stroke-width="2.5"/>
-      <path d="M130 378 Q250 365 375 375" stroke="#5a3a6a" stroke-width="2" fill="none" opacity=".55"/>
-      <path d="M118 405 Q250 392 380 402" stroke="#5a3a6a" stroke-width="2" fill="none" opacity=".5"/>
-      <path d="M112 428 Q250 418 382 426" stroke="#5a3a6a" stroke-width="2" fill="none" opacity=".45"/>
-      <path d="M110 355 Q250 338 385 358" stroke="#c8a8d8" stroke-width="3" fill="none" opacity=".8"/>
+      <path d="M198 372 Q290 362 380 372" stroke="#5a3a6a" stroke-width="2" fill="none" opacity=".55"/>
+      <path d="M192 400 Q290 390 384 400" stroke="#5a3a6a" stroke-width="2" fill="none" opacity=".5"/>
+      <path d="M188 428 Q290 418 385 428" stroke="#5a3a6a" stroke-width="2" fill="none" opacity=".45"/>
+      <path d="M185 348 Q290 335 388 355" stroke="#c8a8d8" stroke-width="3" fill="none" opacity=".8"/>
     </svg>
   </div>
 </main>
@@ -661,7 +661,7 @@ let readingTimers = [];
 let currentUser = null;
 
 /* ============ GUARDAR ============ */
-const STORAGE_KEY = 'akane_save_v8';
+const STORAGE_KEY = 'akane_save_v9';
 let saveTimeout, cloudSaveTimeout;
 function saveGame(immediate = false) {
   try {
@@ -818,8 +818,7 @@ function setPose(pose) {
   if (cover) cover.classList.toggle('show', sleeping);
 
   if (sleeping) {
-    // 🎯 Rotar 90° y acostar sobre la cama
-    bodyInner.setAttribute('transform', 'matrix(0 -0.85 0.85 0 -75 520)');
+    bodyInner.setAttribute('transform', 'matrix(0 -0.5 0.5 0 52 500)');
   } else if (lying) {
     bodyInner.setAttribute('transform', 'translate(-20, 90) rotate(-78 200 380)');
   } else if (sitting) {
@@ -845,7 +844,7 @@ const rooms = {
 };
 function getTimeSlot() {
   const h = new Date().getHours();
-  if (h >= 5 && h < 11) return 'mañana';
+  if (h >= 6 && h < 11) return 'mañana';
   if (h >= 11 && h < 17) return 'tarde';
   if (h >= 17 && h < 21) return 'atardecer';
   return 'noche';
@@ -869,10 +868,12 @@ const FURNITURE = {
     <line x1="46" y1="115" x2="184" y2="115" stroke="#3a2a3a" stroke-width="4"/>
     <path d="M30 45 Q48 50 46 180 Q40 190 30 185 Z" fill="#6a3a52" opacity=".85"/>
     <path d="M200 45 Q182 50 184 180 Q190 190 200 185 Z" fill="#6a3a52" opacity=".85"/>
-    <rect x="260" y="70" width="90" height="120" rx="3" fill="#2a1a10" stroke="#8a6a3a" stroke-width="2"/>
-    <rect x="265" y="75" width="80" height="110" fill="#a8c8e0"/>
-    <circle cx="305" cy="115" r="18" fill="#f5e8a0"/>
-    <path d="M265 155 L290 125 L315 150 L335 130 L345 175 L265 175 Z" fill="#4a7a3a"/>
+    <g id="photoFrame">
+      <rect x="250" y="60" width="118" height="148" rx="5" fill="#8a6a3a" stroke="#5a3a1a" stroke-width="3.5"/>
+      <rect x="256" y="66" width="106" height="128" fill="#a8c8e0"/>
+      <circle cx="300" cy="110" r="18" fill="#f5e8a0"/>
+      <path d="M256 160 L285 130 L310 155 L330 135 L345 175 L256 175 Z" fill="#4a7a3a"/>
+    </g>
     <rect x="8" y="340" width="20" height="240" rx="6" fill="#4a2a10" stroke="#1a0e04" stroke-width="2.5"/>
     <rect x="24" y="355" width="362" height="225" rx="12" fill="#4a2a10" stroke="#1a0e04" stroke-width="3"/>
     <rect x="32" y="362" width="348" height="210" rx="8" fill="#7a4a28"/>
@@ -891,55 +892,81 @@ const FURNITURE = {
     <circle cx="359" cy="412" r="9" fill="#FFF8C0" opacity=".6"/>
   `,
   cocina: () => `
-    <rect x="40" y="80" width="320" height="110" rx="4" fill="#6a4a2a" stroke="#2a1a08" stroke-width="2"/>
-    <line x1="200" y1="80" x2="200" y2="190" stroke="#2a1a08" stroke-width="2"/>
-    <rect x="60" y="100" width="120" height="70" rx="3" fill="#8a6a4a" stroke="#4a2a10" stroke-width="1.5"/>
-    <rect x="220" y="100" width="120" height="70" rx="3" fill="#8a6a4a" stroke="#4a2a10" stroke-width="1.5"/>
-    <circle cx="120" cy="135" r="3" fill="#D4A843"/>
-    <circle cx="280" cy="135" r="3" fill="#D4A843"/>
-    <rect x="20" y="440" width="360" height="20" fill="#4a4a5a"/>
-    <rect x="20" y="460" width="360" height="80" fill="#5a3a1a" stroke="#2a1a08" stroke-width="2"/>
-    <rect x="30" y="470" width="100" height="60" rx="3" fill="#4a2810"/>
-    <rect x="140" y="470" width="100" height="60" rx="3" fill="#4a2810"/>
-    <rect x="250" y="470" width="120" height="60" rx="3" fill="#4a2810"/>
-    <circle cx="80" cy="500" r="4" fill="#D4A843"/>
-    <circle cx="190" cy="500" r="4" fill="#D4A843"/>
-    <circle cx="310" cy="500" r="4" fill="#D4A843"/>
-    <circle cx="110" cy="430" r="20" fill="#2a2a3a" stroke="#8a8a9a" stroke-width="2"/>
-    <circle cx="180" cy="430" r="20" fill="#2a2a3a" stroke="#8a8a9a" stroke-width="2"/>
-    <circle cx="110" cy="430" r="10" fill="#1a1a2a"/>
-    <circle cx="180" cy="430" r="10" fill="#1a1a2a"/>
+    <rect x="20" y="70" width="360" height="120" rx="4" fill="#6a4a2a" stroke="#2a1a08" stroke-width="2"/>
+    <line x1="200" y1="70" x2="200" y2="190" stroke="#2a1a08" stroke-width="2"/>
+    <rect x="35" y="85" width="150" height="90" rx="3" fill="#8a6a4a" stroke="#4a2a10" stroke-width="1.5"/>
+    <rect x="215" y="85" width="150" height="90" rx="3" fill="#8a6a4a" stroke="#4a2a10" stroke-width="1.5"/>
+    <circle cx="110" cy="130" r="3" fill="#D4A843"/>
+    <circle cx="290" cy="130" r="3" fill="#D4A843"/>
+    <rect x="10" y="440" width="380" height="20" fill="#4a4a5a"/>
+    <rect x="10" y="460" width="380" height="80" fill="#5a3a1a" stroke="#2a1a08" stroke-width="2"/>
+    <rect x="20" y="470" width="90" height="60" rx="3" fill="#4a2810"/>
+    <rect x="120" y="470" width="90" height="60" rx="3" fill="#4a2810"/>
+    <rect x="220" y="470" width="90" height="60" rx="3" fill="#4a2810"/>
+    <rect x="320" y="470" width="60" height="60" rx="3" fill="#4a2810"/>
+    <circle cx="65" cy="500" r="4" fill="#D4A843"/>
+    <circle cx="165" cy="500" r="4" fill="#D4A843"/>
+    <circle cx="265" cy="500" r="4" fill="#D4A843"/>
+    <circle cx="350" cy="500" r="4" fill="#D4A843"/>
+    <circle cx="90" cy="430" r="22" fill="#2a2a3a" stroke="#8a8a9a" stroke-width="2"/>
+    <circle cx="90" cy="430" r="12" fill="#1a1a2a"/>
+    <circle cx="160" cy="430" r="22" fill="#2a2a3a" stroke="#8a8a9a" stroke-width="2"/>
+    <circle cx="160" cy="430" r="12" fill="#1a1a2a"/>
+    <rect x="240" y="400" width="130" height="40" rx="4" fill="#3a3a3a" stroke="#1a1a1a" stroke-width="2"/>
+    <rect x="248" y="408" width="114" height="24" rx="2" fill="#2a2a2a"/>
+    <rect x="248" y="408" width="30" height="8" fill="#c94a4a"/>
+    <circle cx="270" cy="420" r="4" fill="#e8a04b"/>
+    <ellipse cx="330" cy="200" rx="35" ry="10" fill="#3a2010"/>
+    <path d="M305 200 L305 240 Q305 250 330 250 Q355 250 355 240 L355 200 Z" fill="#e8d8b0" opacity=".85"/>
   `,
   comedor: () => `
-    <rect x="130" y="70" width="140" height="100" rx="4" fill="#3a2010" stroke="#8a6a3a" stroke-width="3"/>
-    <rect x="136" y="76" width="128" height="88" fill="#a8c8e0"/>
-    <circle cx="200" cy="120" r="20" fill="#F5E8A0"/>
-    <ellipse cx="200" cy="480" rx="180" ry="40" fill="#5a3a1a" stroke="#2a1408" stroke-width="3"/>
-    <ellipse cx="200" cy="475" rx="180" ry="40" fill="#7a4a2a"/>
-    <ellipse cx="200" cy="470" rx="170" ry="35" fill="#8a5a3a"/>
-    <rect x="60" y="500" width="40" height="100" rx="4" fill="#6a3a1a"/>
-    <rect x="300" y="500" width="40" height="100" rx="4" fill="#6a3a1a"/>
-    <path d="M170 440 Q170 460 178 465 L178 475 L172 478 L188 478 L182 475 L182 465 Q190 460 190 440 Z" fill="#c0d8e8" opacity=".8"/>
-    <path d="M210 440 Q210 460 218 465 L218 475 L212 478 L228 478 L222 475 L222 465 Q230 460 230 440 Z" fill="#c0d8e8" opacity=".8"/>
+    <rect x="120" y="55" width="160" height="110" rx="4" fill="#3a2010" stroke="#8a6a3a" stroke-width="4"/>
+    <rect x="128" y="63" width="144" height="94" fill="#a8c8e0"/>
+    <circle cx="200" cy="105" r="22" fill="#F5E8A0"/>
+    <path d="M128 135 L165 110 L195 130 L225 105 L245 130 L265 115 L272 157 L128 157 Z" fill="#4a7a3a"/>
+    <line x1="200" y1="30" x2="200" y2="55" stroke="#3a2010" stroke-width="2"/>
+    <ellipse cx="200" cy="30" rx="35" ry="12" fill="#8a6a3a" stroke="#3a2010" stroke-width="2"/>
+    <ellipse cx="200" cy="28" rx="28" ry="8" fill="#F5E8A0" opacity=".7"/>
+    <ellipse cx="200" cy="480" rx="180" ry="45" fill="#5a3a1a" stroke="#2a1408" stroke-width="3"/>
+    <ellipse cx="200" cy="474" rx="180" ry="45" fill="#7a4a2a"/>
+    <ellipse cx="200" cy="468" rx="168" ry="38" fill="#8a5a3a"/>
+    <ellipse cx="200" cy="465" rx="150" ry="30" fill="#9a6a4a" opacity=".5"/>
+    <rect x="30" y="500" width="45" height="105" rx="5" fill="#6a3a1a" stroke="#2a1408" stroke-width="2"/>
+    <rect x="35" y="475" width="35" height="30" rx="4" fill="#7a4a2a"/>
+    <rect x="325" y="500" width="45" height="105" rx="5" fill="#6a3a1a" stroke="#2a1408" stroke-width="2"/>
+    <rect x="330" y="475" width="35" height="30" rx="4" fill="#7a4a2a"/>
+    <rect x="150" y="510" width="45" height="95" rx="5" fill="#6a3a1a" stroke="#2a1408" stroke-width="2"/>
+    <rect x="205" y="510" width="45" height="95" rx="5" fill="#6a3a1a" stroke="#2a1408" stroke-width="2"/>
+    <path d="M155 435 Q155 458 165 464 L165 475 L158 478 L180 478 L172 475 L172 464 Q182 458 182 435 Z" fill="#c0d8e8" opacity=".85"/>
+    <path d="M218 435 Q218 458 228 464 L228 475 L221 478 L243 478 L235 475 L235 464 Q245 458 245 435 Z" fill="#c0d8e8" opacity=".85"/>
+    <ellipse cx="168" cy="430" rx="14" ry="4" fill="#e8c0a0"/>
+    <ellipse cx="230" cy="430" rx="14" ry="4" fill="#e8c0a0"/>
   `,
   sala: () => `
-    <rect x="240" y="70" width="140" height="160" rx="4" fill="#1a1020" stroke="#3a2a3a" stroke-width="4"/>
-    <rect x="246" y="76" width="128" height="148" fill="#3a4a5a"/>
-    <line x1="310" y1="76" x2="310" y2="224" stroke="#3a2a3a" stroke-width="3"/>
-    <line x1="246" y1="150" x2="374" y2="150" stroke="#3a2a3a" stroke-width="3"/>
-    <rect x="40" y="90" width="160" height="110" rx="6" fill="#0a0a0a" stroke="#2a2a2a" stroke-width="3"/>
-    <rect x="46" y="96" width="148" height="98" fill="#2a4a5a"/>
-    <rect x="60" y="110" width="60" height="6" fill="#6a9ab8" opacity=".7"/>
-    <rect x="60" y="126" width="120" height="4" fill="#6a9ab8" opacity=".5"/>
-    <rect x="60" y="138" width="90" height="4" fill="#6a9ab8" opacity=".5"/>
-    <rect x="60" y="150" width="140" height="4" fill="#6a9ab8" opacity=".5"/>
-    <rect x="60" y="162" width="70" height="4" fill="#6a9ab8" opacity=".5"/>
+    <rect x="230" y="55" width="150" height="170" rx="4" fill="#1a1020" stroke="#3a2a3a" stroke-width="5"/>
+    <rect x="236" y="61" width="138" height="158" fill="#3a4a5a"/>
+    <line x1="305" y1="61" x2="305" y2="219" stroke="#3a2a3a" stroke-width="3"/>
+    <line x1="236" y1="140" x2="374" y2="140" stroke="#3a2a3a" stroke-width="3"/>
+    <path d="M224 55 Q240 60 242 225 Q236 235 224 230 Z" fill="#6a3a52" opacity=".8"/>
+    <path d="M386 55 Q370 60 368 225 Q374 235 386 230 Z" fill="#6a3a52" opacity=".8"/>
+    <rect x="30" y="80" width="170" height="110" rx="6" fill="#0a0a0a" stroke="#2a2a2a" stroke-width="3"/>
+    <rect x="36" y="86" width="158" height="98" fill="#2a4a5a"/>
+    <rect x="50" y="100" width="70" height="8" fill="#6a9ab8" opacity=".7"/>
+    <rect x="50" y="118" width="130" height="5" fill="#6a9ab8" opacity=".5"/>
+    <rect x="50" y="132" width="100" height="5" fill="#6a9ab8" opacity=".5"/>
+    <rect x="50" y="146" width="150" height="5" fill="#6a9ab8" opacity=".5"/>
+    <rect x="50" y="160" width="80" height="5" fill="#6a9ab8" opacity=".5"/>
+    <ellipse cx="200" cy="590" rx="200" ry="22" fill="#5a2a3a" opacity=".6"/>
     <path d="M20 460 Q20 440 40 440 L360 440 Q380 440 380 460 L380 590 Q380 610 360 610 L40 610 Q20 610 20 590 Z" fill="#5a3548" stroke="#3a2030" stroke-width="2"/>
     <path d="M40 460 L360 460 L360 510 L40 510 Z" fill="#7a4a62" opacity=".9"/>
-    <rect x="20" y="500" width="40" height="110" rx="10" fill="#6a3a52"/>
-    <rect x="340" y="500" width="40" height="110" rx="10" fill="#6a3a52"/>
-    <rect x="80" y="540" width="50" height="50" rx="6" fill="#8a5a72"/>
-    <rect x="270" y="540" width="50" height="50" rx="6" fill="#8a5a72"/>
+    <rect x="20" y="500" width="45" height="115" rx="10" fill="#6a3a52"/>
+    <rect x="335" y="500" width="45" height="115" rx="10" fill="#6a3a52"/>
+    <rect x="75" y="535" width="55" height="55" rx="6" fill="#8a5a72"/>
+    <rect x="270" y="535" width="55" height="55" rx="6" fill="#8a5a72"/>
+    <ellipse cx="200" cy="430" rx="60" ry="12" fill="#3a2010" opacity=".7"/>
+    <rect x="180" y="430" width="40" height="8" fill="#5a3a1a"/>
+    <rect x="192" y="438" width="16" height="70" fill="#4a2a10"/>
+    <ellipse cx="200" cy="430" rx="30" ry="6" fill="#8a6a3a"/>
   `,
   bano: () => `
     <defs>
@@ -947,35 +974,90 @@ const FURNITURE = {
         <rect width="40" height="40" fill="#a8c8d8"/>
         <rect width="40" height="40" fill="none" stroke="#7a98a8" stroke-width="2"/>
       </pattern>
+      <pattern id="floorTiles" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+        <rect width="50" height="50" fill="#c8d8e0"/>
+        <rect width="50" height="50" fill="none" stroke="#8a98a8" stroke-width="2"/>
+      </pattern>
     </defs>
-    <rect x="0" y="0" width="400" height="400" fill="url(#tiles)" opacity=".6"/>
-    <rect x="140" y="80" width="120" height="160" rx="60" fill="#c8e0e8" stroke="#3a4a5a" stroke-width="4"/>
-    <ellipse cx="200" cy="160" rx="50" ry="70" fill="#d8eef2" opacity=".7"/>
-    <ellipse cx="180" cy="130" rx="20" ry="30" fill="#fff" opacity=".5"/>
-    <ellipse cx="200" cy="380" rx="80" ry="30" fill="#e8e8e8" stroke="#a0a0a0" stroke-width="2"/>
-    <ellipse cx="200" cy="370" rx="70" ry="25" fill="#c8e0e8"/>
-    <ellipse cx="200" cy="365" rx="55" ry="18" fill="#e0f2f6"/>
-    <rect x="195" y="340" width="10" height="30" fill="#a0a0a0"/>
-    <circle cx="200" cy="340" r="6" fill="#a0a0a0"/>
+    <rect x="0" y="0" width="400" height="400" fill="url(#tiles)" opacity=".8"/>
+    <rect x="0" y="395" width="400" height="225" fill="url(#floorTiles)" opacity=".9"/>
+    <rect x="0" y="390" width="400" height="8" fill="#5a6878"/>
+
+    <rect x="40" y="90" width="100" height="170" rx="60" fill="#c8e0e8" stroke="#3a4a5a" stroke-width="4"/>
+    <ellipse cx="90" cy="175" rx="40" ry="60" fill="#d8eef2" opacity=".7"/>
+    <ellipse cx="75" cy="150" rx="15" ry="25" fill="#fff" opacity=".5"/>
+
+    <rect x="155" y="105" width="90" height="115" rx="6" fill="#e8e8e8" stroke="#a0a0a0" stroke-width="3"/>
+    <ellipse cx="200" cy="160" rx="35" ry="45" fill="#c8e0e8"/>
+    <ellipse cx="185" cy="140" rx="12" ry="20" fill="#fff" opacity=".55"/>
+
+    <rect x="30" y="270" width="140" height="20" rx="4" fill="#8a98a8"/>
+    <path d="M40 290 L40 400 Q40 415 55 415 L145 415 Q160 415 160 400 L160 290 Z" fill="#e8e8e8" stroke="#a0a0a0" stroke-width="2"/>
+    <ellipse cx="100" cy="305" rx="55" ry="18" fill="#c8e0e8" stroke="#a0a0a0" stroke-width="1.5"/>
+    <ellipse cx="100" cy="300" rx="48" ry="14" fill="#e0f2f6"/>
+    <ellipse cx="100" cy="298" rx="40" ry="10" fill="#fff" opacity=".6"/>
+    <rect x="95" y="265" width="10" height="30" fill="#a0a0a0"/>
+    <circle cx="100" cy="262" r="6" fill="#a0a0a0"/>
+    <circle cx="100" cy="262" r="3" fill="#c8e0e8"/>
+
+    <rect x="255" y="270" width="120" height="145" rx="12" fill="#fff" stroke="#a0a0a0" stroke-width="2.5"/>
+    <ellipse cx="315" cy="290" rx="42" ry="14" fill="#e8e8e8" stroke="#a0a0a0" stroke-width="1.5"/>
+    <ellipse cx="315" cy="295" rx="35" ry="10" fill="#c8e0e8"/>
+    <rect x="280" y="300" width="70" height="80" rx="20" fill="#e8e8e8" stroke="#a0a0a0" stroke-width="1.5"/>
+    <circle cx="315" cy="340" r="12" fill="#c8e0e8" opacity=".6"/>
+    <rect x="285" y="395" width="60" height="12" rx="6" fill="#8a98a8"/>
+
+    <rect x="175" y="55" width="60" height="8" fill="#8a98a8"/>
+    <path d="M180 63 Q180 90 195 110 Q205 122 205 150" stroke="#b8c8d8" stroke-width="2" fill="none"/>
+    <circle cx="205" cy="155" r="8" fill="#a8c0d0" opacity=".9"/>
+    <path d="M205 163 Q205 175 195 185 Q188 192 188 205" stroke="#a8c0d0" stroke-width="1.5" fill="none" opacity=".5"/>
+
+    <path d="M200 30 Q200 50 205 60 Q210 50 210 30 Z" fill="#f5e8d8" opacity=".9"/>
+    <circle cx="205" cy="42" r="6" fill="#f5e8a0" opacity=".8"/>
+
+    <ellipse cx="30" cy="60" rx="25" ry="8" fill="#8a98a8"/>
+    <path d="M10 60 Q10 45 30 40 Q50 45 50 60 Z" fill="#e8d8b0"/>
+    <circle cx="30" cy="50" r="4" fill="#d8c090"/>
   `,
   jardin: () => `
-    <circle cx="330" cy="90" r="40" fill="#FFF2A0" opacity=".9"/>
-    <circle cx="330" cy="90" r="30" fill="#FFF8C8"/>
-    <ellipse cx="60" cy="200" rx="60" ry="90" fill="#2a5a28" opacity=".85"/>
-    <rect x="52" y="270" width="16" height="80" fill="#3a2418"/>
-    <ellipse cx="340" cy="220" rx="70" ry="100" fill="#2a5a28" opacity=".85"/>
-    <rect x="332" y="300" width="16" height="70" fill="#3a2418"/>
-    <rect x="120" y="500" width="160" height="14" rx="4" fill="#7a4a2a"/>
-    <rect x="120" y="480" width="160" height="12" rx="4" fill="#8a5a3a"/>
-    <rect x="126" y="514" width="12" height="60" fill="#5a3a1a"/>
-    <rect x="262" y="514" width="12" height="60" fill="#5a3a1a"/>
-    <rect x="130" y="465" width="140" height="10" rx="4" fill="#8a5a3a"/>
-    <circle cx="90" cy="580" r="8" fill="#e85d75"/>
-    <circle cx="90" cy="580" r="4" fill="#f5e8a0"/>
-    <circle cx="320" cy="590" r="7" fill="#c9506b"/>
-    <circle cx="320" cy="590" r="3" fill="#f5e8a0"/>
-    <circle cx="350" cy="560" r="6" fill="#e8a04b"/>
-    <circle cx="350" cy="560" r="3" fill="#fff"/>
+    <circle cx="330" cy="80" r="45" fill="#FFF2A0" opacity=".9"/>
+    <circle cx="330" cy="80" r="33" fill="#FFF8C8"/>
+    <ellipse cx="330" cy="80" r="50" fill="#FFF8C8" opacity=".25"/>
+
+    <ellipse cx="40" cy="90" rx="60" ry="30" fill="#fff" opacity=".85"/>
+    <ellipse cx="80" cy="100" rx="45" ry="25" fill="#fff" opacity=".9"/>
+    <ellipse cx="120" cy="95" rx="40" ry="22" fill="#fff" opacity=".85"/>
+
+    <ellipse cx="50" cy="230" rx="65" ry="100" fill="#2a5a28" opacity=".9"/>
+    <ellipse cx="50" cy="230" rx="55" ry="90" fill="#3a7a38" opacity=".7"/>
+    <rect x="42" y="300" width="18" height="90" fill="#3a2418"/>
+
+    <ellipse cx="350" cy="250" rx="75" ry="110" fill="#2a5a28" opacity=".9"/>
+    <ellipse cx="350" cy="250" rx="65" ry="100" fill="#3a7a38" opacity=".7"/>
+    <rect x="340" y="330" width="18" height="80" fill="#3a2418"/>
+
+    <ellipse cx="200" cy="180" rx="45" ry="55" fill="#4a8a3a" opacity=".6"/>
+    <rect x="196" y="230" width="10" height="50" fill="#3a2418"/>
+
+    <rect x="20" y="430" width="180" height="16" rx="4" fill="#8a5a3a" stroke="#5a3a1a" stroke-width="1.5"/>
+    <rect x="20" y="408" width="180" height="14" rx="4" fill="#9a6a4a"/>
+    <rect x="28" y="446" width="12" height="70" fill="#6a3a1a"/>
+    <rect x="180" y="446" width="12" height="70" fill="#6a3a1a"/>
+    <rect x="20" y="390" width="180" height="12" rx="4" fill="#8a5a3a"/>
+
+    <ellipse cx="280" cy="500" rx="70" ry="14" fill="#3a5a2a" opacity=".7"/>
+    <circle cx="280" cy="490" r="18" fill="#e85d75"/>
+    <circle cx="280" cy="490" r="8" fill="#f5e8a0"/>
+    <circle cx="240" cy="510" r="14" fill="#c9506b"/>
+    <circle cx="240" cy="510" r="6" fill="#f5e8a0"/>
+    <circle cx="320" cy="515" r="16" fill="#e8a04b"/>
+    <circle cx="320" cy="515" r="7" fill="#fff"/>
+    <circle cx="350" cy="480" r="12" fill="#c94a9a"/>
+    <circle cx="350" cy="480" r="5" fill="#f5e8a0"/>
+
+    <ellipse cx="90" cy="530" rx="40" ry="10" fill="#3a5a2a" opacity=".6"/>
+    <path d="M70 530 Q90 500 110 530 Z" fill="#4a8a3a"/>
+    <path d="M75 530 Q90 505 105 530 Z" fill="#5a9a4a"/>
   `,
   biblioteca: () => `
     <rect x="0" y="40" width="400" height="440" fill="#3a2418"/>
@@ -983,7 +1065,7 @@ const FURNITURE = {
     ${[0,1,2,3,4].map(row => `
       <rect x="20" y="${70 + row*80}" width="360" height="4" fill="#4a2a10"/>
       ${Array.from({length: 18}).map((_, i) => {
-        const colors = ['#c95a4a','#4a7ac9','#c9a04a','#c9c94a','#8a4ac9','#4ac98a','#c96a4a'];
+        const colors = ['#c95a4a','#4a7ac9','#c9a04a','#c9c94a','#8a4ac9','#4ac98a','#c96a4a','#7a3a5a'];
         const c = colors[(i + row) % colors.length];
         const h = 55 + (i % 3) * 5;
         return `<rect x="${25 + i*20}" y="${70 + row*80 - h + 60}" width="16" height="${h}" fill="${c}" stroke="#1a0a04" stroke-width="1"/>`;
@@ -992,31 +1074,46 @@ const FURNITURE = {
     <rect x="60" y="500" width="280" height="14" rx="4" fill="#5a3a20"/>
     <rect x="80" y="514" width="14" height="80" fill="#4a2a10"/>
     <rect x="306" y="514" width="14" height="80" fill="#4a2a10"/>
-    <rect x="180" y="470" width="14" height="30" fill="#f5e8d8"/>
-    <ellipse cx="187" cy="470" rx="9" ry="4" fill="#f5e8d8"/>
-    <ellipse cx="187" cy="458" rx="4" ry="8" fill="#f5e8a0" opacity=".9"/>
+    <rect x="185" y="468" width="18" height="34" fill="#f5e8d8"/>
+    <ellipse cx="194" cy="468" rx="11" ry="5" fill="#f5e8d8"/>
+    <ellipse cx="194" cy="455" rx="5" ry="10" fill="#f5e8a0" opacity=".95"/>
+    <circle cx="194" cy="445" r="7" fill="#FFF2A0" opacity=".4"/>
+    <rect x="260" y="478" width="60" height="22" rx="2" fill="#8a3a3a" stroke="#5a1a1a" stroke-width="1.5"/>
+    <rect x="288" y="480" width="3" height="18" fill="#f5e8d8"/>
   `,
   garaje: () => `
-    <rect x="60" y="60" width="280" height="240" fill="#3a3a3a" stroke="#1a1a1a" stroke-width="4"/>
+    <rect x="30" y="50" width="340" height="260" fill="#3a3a3a" stroke="#1a1a1a" stroke-width="4"/>
     ${Array.from({length: 6}).map((_, i) => `
-      <rect x="70" y="${70 + i*40}" width="260" height="34" fill="#4a4a4a" stroke="#2a2a2a" stroke-width="1.5"/>
-      <circle cx="200" cy="${88 + i*40}" r="2" fill="#2a2a2a"/>
+      <rect x="42" y="${62 + i*42}" width="316" height="36" fill="#4a4a4a" stroke="#2a2a2a" stroke-width="1.5"/>
+      <circle cx="200" cy="${82 + i*42}" r="2.5" fill="#2a2a2a"/>
     `).join('')}
-    <rect x="350" y="180" width="50" height="300" fill="#2a2a2a"/>
+    <rect x="350" y="180" width="50" height="320" fill="#2a2a2a"/>
     <rect x="355" y="200" width="40" height="6" fill="#4a4a4a"/>
     <rect x="355" y="260" width="40" height="6" fill="#4a4a4a"/>
     <rect x="355" y="320" width="40" height="6" fill="#4a4a4a"/>
     <rect x="355" y="380" width="40" height="6" fill="#4a4a4a"/>
     <rect x="362" y="220" width="14" height="30" fill="#c94a4a"/>
     <rect x="368" y="280" width="14" height="30" fill="#4a7ac9"/>
-    <circle cx="60" cy="400" r="40" fill="#1a1a1a" stroke="#3a3a3a" stroke-width="3"/>
-    <circle cx="60" cy="400" r="20" fill="#3a3a3a"/>
+    <rect x="362" y="340" width="14" height="30" fill="#c9c94a"/>
+    <rect x="0" y="440" width="400" height="20" fill="#2a2a2a"/>
+    <rect x="0" y="460" width="400" height="80" fill="#1a1a1a"/>
+    <ellipse cx="80" cy="590" rx="60" ry="10" fill="#000" opacity=".5"/>
+    <circle cx="80" cy="560" r="45" fill="#1a1a1a" stroke="#3a3a3a" stroke-width="3"/>
+    <circle cx="80" cy="560" r="28" fill="#3a3a3a"/>
+    <circle cx="80" cy="560" r="14" fill="#D4A843" stroke="#8a6a20" stroke-width="2"/>
+    <circle cx="80" cy="560" r="5" fill="#8a6a20"/>
+    <ellipse cx="270" cy="590" rx="70" ry="12" fill="#000" opacity=".4"/>
+    <rect x="220" y="540" width="100" height="50" rx="6" fill="#3a3a3a" stroke="#1a1a1a" stroke-width="2"/>
+    <rect x="228" y="546" width="84" height="38" rx="3" fill="#2a2a2a"/>
+    <circle cx="250" cy="565" r="6" fill="#c94a4a"/>
+    <circle cx="280" cy="565" r="6" fill="#c9c94a"/>
   `,
 };
 function drawFurniture(roomId, slot) {
   const el = $('roomFurniture');
   if (!el) return;
   el.innerHTML = (FURNITURE[roomId] || (() => ''))(slot || getTimeSlot());
+  if (currentUser && currentUser.photoURL) updatePhotoFrame(currentUser.photoURL);
 }
 function applyScene() {
   const room = rooms[state.room];
@@ -1861,13 +1958,122 @@ onAuthStateChanged(auth, async user => {
     $('userPhoto').src = user.photoURL || '';
     $('userAvatar').src = user.photoURL || '';
     $('userAvatar').style.display = user.photoURL ? '' : 'none';
+    updatePhotoFrame(user.photoURL);
     await loadCloud(user.uid);
   } else {
     $('loginPrompt').style.display = 'block';
     $('userInfo').style.display = 'none';
     $('userAvatar').style.display = 'none';
+    updatePhotoFrame(null);
   }
 });
+
+/* ============ CUADRO CON FOTO DE PAREJA + ESPÍRITU ============ */
+function updatePhotoFrame(photoURL) {
+  const frame = document.getElementById('photoFrame');
+  if (!frame) return;
+
+  const spirit = `
+    <g transform="translate(354, 155)" opacity="0.95">
+      <circle cx="0" cy="0" r="14" fill="#FFF2A0" opacity=".25"/>
+      <circle cx="0" cy="0" r="10" fill="#e8a04b" opacity=".55"/>
+      <ellipse cx="0" cy="0" rx="7" ry="8" fill="#FFE8B0"/>
+      <ellipse cx="0" cy="-2" rx="6" ry="6" fill="#FFF8D8"/>
+      <circle cx="-2.2" cy="-2" r="0.9" fill="#5a3a1a"/>
+      <circle cx="2.2" cy="-2" r="0.9" fill="#5a3a1a"/>
+      <path d="M-1.5 1.5 Q0 3 1.5 1.5" stroke="#5a3a1a" stroke-width="0.6" fill="none" stroke-linecap="round"/>
+      <ellipse cx="-3.5" cy="0.5" rx="1.3" ry="0.7" fill="#e85d75" opacity=".6"/>
+      <ellipse cx="3.5" cy="0.5" rx="1.3" ry="0.7" fill="#e85d75" opacity=".6"/>
+      <circle cx="0" cy="0" r="13" fill="none" stroke="#FFF2A0" stroke-width="0.7" opacity=".7">
+        <animate attributeName="r" values="11;15;11" dur="2.5s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values=".7;.2;.7" dur="2.5s" repeatCount="indefinite"/>
+      </circle>
+      <path d="M0 -14 L1.5 -11 L4.5 -12 L3 -9 L6 -7.5 L3 -6 L4 -3 L0 -5 L-4 -3 L-3 -6 L-6 -7.5 L-3 -9 L-4.5 -12 L-1.5 -11 Z"
+            fill="#FFF2A0" opacity=".75">
+        <animate attributeName="opacity" values=".75;.3;.75" dur="2s" repeatCount="indefinite"/>
+      </path>
+    </g>
+  `;
+
+  if (photoURL) {
+    frame.innerHTML = `
+      <rect x="250" y="60" width="118" height="148" rx="5" fill="#8a6a3a" stroke="#5a3a1a" stroke-width="3.5"/>
+      <rect x="256" y="66" width="106" height="128" fill="#fdf0e0"/>
+      <clipPath id="photoClip"><rect x="258" y="68" width="46" height="122" rx="2"/></clipPath>
+      <image href="${photoURL}" x="258" y="68" width="46" height="122" preserveAspectRatio="xMidYMid slice" clip-path="url(#photoClip)"/>
+      <g transform="translate(306, 66)">
+        <rect x="0" y="0" width="44" height="122" fill="#ffeaf0"/>
+        <g transform="translate(22, 62) scale(0.26)">
+          <path d="M-45 -55 Q-50 -70 -35 -75 L35 -75 Q50 -70 45 -55 L55 65 Q58 85 48 90 L-48 90 Q-58 85 -55 65 Z"
+                fill="#FFFDF7" stroke="#DDD0B8" stroke-width="2"/>
+          <path d="M-30 -75 L-36 -88" stroke="#FFFDF7" stroke-width="10" stroke-linecap="round"/>
+          <path d="M30 -75 L36 -88" stroke="#FFFDF7" stroke-width="10" stroke-linecap="round"/>
+          <path d="M-15 -85 L15 -85 L15 -70 Q0 -62 -15 -70 Z" fill="#FFE0C8"/>
+          <ellipse cx="0" cy="-125" rx="60" ry="68" fill="#FFDCC4"/>
+          <path d="M-60 -140 Q-62 -200 0 -205 Q62 -200 60 -140 Q54 -172 34 -168 Q22 -190 0 -190 Q-22 -190 -34 -168 Q-54 -172 -60 -140 Z" fill="#D9531E"/>
+          <path d="M-60 -138 Q-66 -160 -50 -168 Q-44 -158 -34 -160 Q-42 -142 -48 -128 Q-58 -126 -60 -138 Z" fill="#F08A4B"/>
+          <path d="M60 -138 Q66 -160 50 -168 Q44 -158 34 -160 Q42 -142 48 -128 Q58 -126 60 -138 Z" fill="#F08A4B"/>
+          <circle cx="-62" cy="-120" r="14" fill="#D9531E"/>
+          <circle cx="-70" cy="-95" r="12" fill="#D9531E"/>
+          <circle cx="-64" cy="-70" r="10" fill="#D9531E"/>
+          <circle cx="62" cy="-120" r="14" fill="#D9531E"/>
+          <circle cx="70" cy="-95" r="12" fill="#D9531E"/>
+          <circle cx="64" cy="-70" r="10" fill="#D9531E"/>
+          <ellipse cx="-22" cy="-125" rx="11" ry="14" fill="#fff"/>
+          <ellipse cx="-22" cy="-124" rx="9" ry="12" fill="#5BA8C9"/>
+          <ellipse cx="-22" cy="-122" rx="4" ry="6" fill="#0a1a2a"/>
+          <circle cx="-26" cy="-129" r="3" fill="#fff"/>
+          <ellipse cx="22" cy="-125" rx="11" ry="14" fill="#fff"/>
+          <ellipse cx="22" cy="-124" rx="9" ry="12" fill="#5BA8C9"/>
+          <ellipse cx="22" cy="-122" rx="4" ry="6" fill="#0a1a2a"/>
+          <circle cx="18" cy="-129" r="3" fill="#fff"/>
+          <ellipse cx="-40" cy="-105" rx="10" ry="5" fill="#E88B8B" opacity=".55"/>
+          <ellipse cx="40" cy="-105" rx="10" ry="5" fill="#E88B8B" opacity=".55"/>
+          <path d="M-8 -100 Q0 -92 8 -100" stroke="#B86060" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+      </g>
+      ${spirit}
+      <rect x="256" y="66" width="106" height="128" fill="none" stroke="#c9b89c" stroke-width="1"/>
+      <path d="M258 68 L306 68 M258 194 L306 194" stroke="#c9b89c" stroke-width="1"/>
+      <text x="309" y="207" text-anchor="middle" font-size="7.5" font-family="Georgia" font-style="italic" fill="#5a3a1a">Tú, Akane y yo ♡</text>
+    `;
+  } else {
+    frame.innerHTML = `
+      <rect x="250" y="60" width="118" height="148" rx="5" fill="#8a6a3a" stroke="#5a3a1a" stroke-width="3.5"/>
+      <rect x="256" y="66" width="106" height="128" fill="#ffeaf0"/>
+      <g transform="translate(300, 130) scale(0.5)">
+        <path d="M-45 -55 Q-50 -70 -35 -75 L35 -75 Q50 -70 45 -55 L55 65 Q58 85 48 90 L-48 90 Q-58 85 -55 65 Z"
+              fill="#FFFDF7" stroke="#DDD0B8" stroke-width="2"/>
+        <path d="M-30 -75 L-36 -88" stroke="#FFFDF7" stroke-width="10" stroke-linecap="round"/>
+        <path d="M30 -75 L36 -88" stroke="#FFFDF7" stroke-width="10" stroke-linecap="round"/>
+        <path d="M-15 -85 L15 -85 L15 -70 Q0 -62 -15 -70 Z" fill="#FFE0C8"/>
+        <ellipse cx="0" cy="-125" rx="60" ry="68" fill="#FFDCC4"/>
+        <path d="M-60 -140 Q-62 -200 0 -205 Q62 -200 60 -140 Q54 -172 34 -168 Q22 -190 0 -190 Q-22 -190 -34 -168 Q-54 -172 -60 -140 Z" fill="#D9531E"/>
+        <path d="M-60 -138 Q-66 -160 -50 -168 Q-44 -158 -34 -160 Q-42 -142 -48 -128 Q-58 -126 -60 -138 Z" fill="#F08A4B"/>
+        <path d="M60 -138 Q66 -160 50 -168 Q44 -158 34 -160 Q42 -142 48 -128 Q58 -126 60 -138 Z" fill="#F08A4B"/>
+        <circle cx="-62" cy="-120" r="14" fill="#D9531E"/>
+        <circle cx="-70" cy="-95" r="12" fill="#D9531E"/>
+        <circle cx="-64" cy="-70" r="10" fill="#D9531E"/>
+        <circle cx="62" cy="-120" r="14" fill="#D9531E"/>
+        <circle cx="70" cy="-95" r="12" fill="#D9531E"/>
+        <circle cx="64" cy="-70" r="10" fill="#D9531E"/>
+        <ellipse cx="-22" cy="-125" rx="11" ry="14" fill="#fff"/>
+        <ellipse cx="-22" cy="-124" rx="9" ry="12" fill="#5BA8C9"/>
+        <ellipse cx="-22" cy="-122" rx="4" ry="6" fill="#0a1a2a"/>
+        <circle cx="-26" cy="-129" r="3" fill="#fff"/>
+        <ellipse cx="22" cy="-125" rx="11" ry="14" fill="#fff"/>
+        <ellipse cx="22" cy="-124" rx="9" ry="12" fill="#5BA8C9"/>
+        <ellipse cx="22" cy="-122" rx="4" ry="6" fill="#0a1a2a"/>
+        <circle cx="18" cy="-129" r="3" fill="#fff"/>
+        <ellipse cx="-40" cy="-105" rx="10" ry="5" fill="#E88B8B" opacity=".55"/>
+        <ellipse cx="40" cy="-105" rx="10" ry="5" fill="#E88B8B" opacity=".55"/>
+        <path d="M-8 -100 Q0 -92 8 -100" stroke="#B86060" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      ${spirit}
+      <text x="309" y="207" text-anchor="middle" font-size="7.5" font-family="Georgia" font-style="italic" fill="#5a3a1a">Siempre estoy cerca ♡</text>
+    `;
+  }
+}
 
 /* ============ IDLE HABLAR ============ */
 function scheduleIdleSpeak() {
@@ -1916,7 +2122,7 @@ if ('serviceWorker' in navigator) {
     const h = new Date().getHours();
     let greeting = 'Hola, ¿cómo estuvo tu día?';
     if (h >= 22 || h < 6) greeting = 'Hola... qué tarde, ¿no?';
-    else if (h >= 5 && h < 12) greeting = 'Buenos días, ¿cómo amaneciste?';
+    else if (h >= 6 && h < 12) greeting = 'Buenos días, ¿cómo amaneciste?';
     else if (h >= 12 && h < 19) greeting = 'Hola, ¿cómo estuvo tu día?';
     else greeting = 'Buenas tardes, ¿cómo estuvo todo?';
     say(greeting, 4000); speak(greeting, 'es', selectedEs); blush(2000);
